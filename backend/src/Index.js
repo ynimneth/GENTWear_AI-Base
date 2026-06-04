@@ -13,6 +13,10 @@ app.use(helmet());         // Sets secure HTTP headers
 app.use(cors());           // Enables Cross-Origin Resource Sharing
 app.use(express.json());   // Parses incoming JSON request bodies
 
+// Routes
+const authRouter = require('./routes/auth');
+app.use('/auth', authRouter);
+
 // Basic test route
 app.get('/', (req, res) => {
   res.json({ message: 'Server is running!' });

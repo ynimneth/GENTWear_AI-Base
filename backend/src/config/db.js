@@ -13,6 +13,9 @@ const sequelize = new Sequelize(
   }
 );
 
+// Import models
+const User = require('../models/user')(sequelize);
+
 const connectDB = async () => {
   try {
     await sequelize.authenticate();
@@ -23,4 +26,4 @@ const connectDB = async () => {
   }
 };
 
-module.exports = { sequelize, connectDB };
+module.exports = { sequelize, connectDB, User };
