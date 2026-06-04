@@ -164,11 +164,29 @@ router.post('/refresh', async (req, res) => {
     if (!user)  return res.status(401).json({ message: 'User not found' });
 
     const accessToken = generateAccessToken(user);
-    return res.json({ accessToken });
+    return res.json({
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        role: user.role
+      }
+    });
 
   } catch (err) {
     return res.status(401).json({ message: 'Invalid or expired refresh token' });
   }
+});
+
+// POST /auth/logout
+router.post('/logout', (req, res) => {
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  });
+  return res.json({ message: 'Logged out successfully' });
 });
 
 module.exports = router;

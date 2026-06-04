@@ -11,7 +11,10 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(helmet());         // Sets secure HTTP headers
-app.use(cors());           // Enables Cross-Origin Resource Sharing
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));           // Enables Cross-Origin Resource Sharing
 app.use(express.json());   // Parses incoming JSON request bodies
 app.use(cookieParser());   // Parses cookies attached to client requests
 
