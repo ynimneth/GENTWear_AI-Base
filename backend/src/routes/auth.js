@@ -4,7 +4,7 @@ const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const { User } = require('../config/db');
 const { sendVerificationEmail } = require('../services/emailService');
-const { generateVerifyToken, verifyEmailToken } = require('../utils/token');
+const { generateVerifyToken, verifyEmailToken, generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../utils/token');
 
 // Validation rules for registration
 const registerValidation = [
@@ -92,6 +92,82 @@ router.get('/verify-email', async (req, res) => {
   } catch (err) {
     console.error('Verify email error:', err);
     return res.status(400).json({ message: 'Invalid or expired verification token' });
+  }
+});
+
+// POST /auth/login
+router.post('/login', [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  body('password').notEmpty().withMessage('Password is required')
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { email, password } = req.body;
+
+  try {
+    // 1. Find user
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // 2. Check email verified
+    if (!user.is_verified) {
+      return res.status(403).json({ message: 'Please verify your email first' });
+    }
+
+    // 3. Compare password
+    const match = await bcrypt.compare(password, user.password_hash);
+    if (!match) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // 4. Sign tokens
+    const accessToken  = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    // 5. Store refresh token in HttpOnly cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000  // 7 days
+    });
+
+    return res.json({
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        role: user.role
+      }
+    });
+
+  } catch (err) {
+    console.error('Login error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// POST /auth/refresh
+router.post('/refresh', async (req, res) => {
+  const token = req.cookies?.refreshToken;
+  if (!token) return res.status(401).json({ message: 'No refresh token' });
+
+  try {
+    const decoded = verifyRefreshToken(token);
+    const user    = await User.findByPk(decoded.userId);
+    if (!user)  return res.status(401).json({ message: 'User not found' });
+
+    const accessToken = generateAccessToken(user);
+    return res.json({ accessToken });
+
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid or expired refresh token' });
   }
 });
 
