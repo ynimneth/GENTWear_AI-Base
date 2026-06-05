@@ -19,6 +19,8 @@ const Category = require('../models/category')(sequelize);
 const Product = require('../models/product')(sequelize);
 const ProductVariant = require('../models/productVariant')(sequelize);
 const ProductImage = require('../models/productImage')(sequelize);
+const CartItem = require('../models/cartItem')(sequelize);
+const WishlistItem = require('../models/wishlistItem')(sequelize);
 
 // Associations
 // Category self-reference
@@ -37,6 +39,26 @@ ProductVariant.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 Product.hasMany(ProductImage, { as: 'images', foreignKey: 'product_id', onDelete: 'CASCADE' });
 ProductImage.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 
+// User & CartItem
+User.hasMany(CartItem, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+CartItem.belongsTo(User, { foreignKey: 'user_id' });
+
+// Product & CartItem
+Product.hasMany(CartItem, { foreignKey: 'product_id', onDelete: 'CASCADE' });
+CartItem.belongsTo(Product, { foreignKey: 'product_id' });
+
+// ProductVariant & CartItem
+ProductVariant.hasMany(CartItem, { foreignKey: 'variant_id', onDelete: 'SET NULL' });
+CartItem.belongsTo(ProductVariant, { as: 'variant', foreignKey: 'variant_id' });
+
+// User & WishlistItem
+User.hasMany(WishlistItem, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+WishlistItem.belongsTo(User, { foreignKey: 'user_id' });
+
+// Product & WishlistItem
+Product.hasMany(WishlistItem, { foreignKey: 'product_id', onDelete: 'CASCADE' });
+WishlistItem.belongsTo(Product, { foreignKey: 'product_id' });
+
 const connectDB = async () => {
   try {
     await sequelize.authenticate();
@@ -54,6 +76,8 @@ module.exports = {
   Category, 
   Product, 
   ProductVariant, 
-  ProductImage 
+  ProductImage,
+  CartItem,
+  WishlistItem
 };
 

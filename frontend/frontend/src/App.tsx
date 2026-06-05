@@ -9,10 +9,14 @@ import ProductList from '../pages/ProductList';
 import ProductDetail from '../pages/ProductDetail';
 import AdminProducts from '../pages/AdminProducts';
 import AdminCategories from '../pages/AdminCategories';
+import Wishlist from '../pages/Wishlist';
+import CartDrawer from '../components/CartDrawer';
+import { useCartStore } from '../store/cartStore';
+import { useWishlistStore } from '../store/wishlistStore';
 import { categoryService } from '../services/categoryService';
 import { 
   User as UserIcon, Shield, LogOut, RefreshCw, KeyRound, 
-  Menu, X, ChevronDown, ShoppingBag, FolderOpen 
+  Menu, X, ChevronDown, ShoppingBag, FolderOpen, Heart 
 } from 'lucide-react';
 
 // Loader component during session re-hydration
@@ -231,6 +235,12 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<number | null>(null);
 
+  const { toggleDrawer, cartItems } = useCartStore() as any;
+  const { wishlistItems } = useWishlistStore() as any;
+
+  const cartCount = cartItems.reduce((acc: number, item: any) => acc + item.quantity, 0);
+  const wishlistCount = wishlistItems.length;
+
   useEffect(() => {
     const fetchCats = async () => {
       try {
@@ -302,6 +312,31 @@ const Navbar = () => {
 
         {/* Right Section: User details & Admin portal link */}
         <div className="hidden md:flex items-center gap-4">
+          {/* Wishlist Link */}
+          <Link to="/wishlist" className="relative text-slate-400 hover:text-red-400 hover:bg-slate-900/40 p-2 rounded-xl transition-all cursor-pointer" title="Wishlist">
+            <Heart size={20} className={wishlistCount > 0 ? "fill-red-500 text-red-500" : ""} />
+            {wishlistCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[9px] font-extrabold border border-slate-950 px-1 shadow-md">
+                {wishlistCount}
+              </span>
+            )}
+          </Link>
+
+          {/* Cart Icon trigger */}
+          <button 
+            id="navbar-cart-btn"
+            onClick={toggleDrawer} 
+            className="relative text-slate-400 hover:text-indigo-400 hover:bg-slate-900/40 p-2 rounded-xl transition-all cursor-pointer" 
+            title="Cart"
+          >
+            <ShoppingBag size={20} />
+            {cartCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 bg-indigo-600 text-white rounded-full flex items-center justify-center text-[9px] font-extrabold border border-slate-950 px-1 shadow-md">
+                {cartCount}
+              </span>
+            )}
+          </button>
+
           {user ? (
             <>
               {user.role === 'admin' && (
@@ -345,6 +380,26 @@ const Navbar = () => {
 
         {/* Mobile menu trigger */}
         <div className="md:hidden flex items-center gap-3">
+          {/* Wishlist Link */}
+          <Link to="/wishlist" className="relative text-slate-400 hover:text-red-400 p-1.5 cursor-pointer" title="Wishlist">
+            <Heart size={18} className={wishlistCount > 0 ? "fill-red-500 text-red-500" : ""} />
+            {wishlistCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] font-bold border border-slate-950 px-0.5">
+                {wishlistCount}
+              </span>
+            )}
+          </Link>
+
+          {/* Cart trigger */}
+          <button onClick={toggleDrawer} className="relative text-slate-400 hover:text-indigo-400 p-1.5 cursor-pointer" title="Cart">
+            <ShoppingBag size={18} />
+            {cartCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 bg-indigo-600 text-white rounded-full flex items-center justify-center text-[8px] font-bold border border-slate-950 px-0.5">
+                {cartCount}
+              </span>
+            )}
+          </button>
+
           {user && (
             <Link to="/profile" className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400">
               <UserIcon size={14} />
@@ -424,7 +479,9 @@ const NavbarWrapper = () => {
 
 function App() {
   const [isInitializing, setIsInitializing] = useState(true);
-  const { refreshToken } = useAuthStore() as any;
+  const { user, refreshToken } = useAuthStore() as any;
+  const { fetchCart, mergeCart } = useCartStore() as any;
+  const { fetchWishlist } = useWishlistStore() as any;
 
   useEffect(() => {
     const initAuth = async () => {
@@ -438,6 +495,19 @@ function App() {
     };
     initAuth();
   }, [refreshToken]);
+
+  // Fetch initial cart and wishlist once session restore is resolved
+  useEffect(() => {
+    if (!isInitializing) {
+      if (user) {
+        // Logged in! Merge guest cart and fetch items
+        mergeCart().then(() => fetchCart());
+        fetchWishlist();
+      } else {
+        fetchCart();
+      }
+    }
+  }, [isInitializing, user]);
 
   if (isInitializing) {
     return <Loader />;
@@ -454,6 +524,7 @@ function App() {
             <Route path="/" element={<Navigate to="/products" replace />} />
             <Route path="/products" element={<ProductList />} />
             <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/wishlist" element={<Wishlist />} />
 
             {/* Public authentication routes */}
             <Route path="/login" element={<Login />} />
@@ -502,6 +573,9 @@ function App() {
           </Routes>
         </main>
         
+        {/* Global Cart Slide-in Drawer */}
+        <CartDrawer />
+
         {/* React Hot Toast setup */}
         <Toaster 
           position="top-right" 

@@ -3,11 +3,15 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   SlidersHorizontal, Search, ChevronDown, RefreshCw, 
-  Grid, List, Eye, ShoppingBag, ArrowUpDown, X
+  Grid, List, Eye, ShoppingBag, ArrowUpDown, X, Heart
 } from 'lucide-react';
 import { productService } from '../services/productService';
 import { categoryService } from '../services/categoryService';
 import { Product, Category } from '../types';
+import { useWishlistStore } from '../store/wishlistStore';
+import { useAuthStore } from '../store/authStore';
+import { gsap } from 'gsap';
+import { toast } from 'react-hot-toast';
 
 export const getImageUrl = (url?: string) => {
   if (!url) return 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80'; // fallback placeholder
@@ -19,6 +23,37 @@ const ProductList: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const catIdParam = searchParams.get('category_id');
+
+  const { toggleWishlist, isInWishlist } = useWishlistStore() as any;
+  const { user } = useAuthStore() as any;
+
+  const handleToggleWishlist = async (e: React.MouseEvent, productId: number) => {
+    e.stopPropagation();
+    if (!user) {
+      toast.error('Please login to save items to your wishlist.');
+      navigate('/login');
+      return;
+    }
+
+    const heartIcon = e.currentTarget.querySelector('svg');
+    if (heartIcon) {
+      gsap.fromTo(heartIcon, 
+        { scale: 0.8 }, 
+        { scale: 1.35, duration: 0.2, yoyo: true, repeat: 1, ease: 'back.out(2)' }
+      );
+    }
+
+    const res = await toggleWishlist(productId);
+    if (res.success) {
+      if (res.added) {
+        toast.success('Added to wishlist!');
+      } else {
+        toast.success('Removed from wishlist.');
+      }
+    } else {
+      toast.error(res.message);
+    }
+  };
 
   // State
   const [products, setProducts] = useState<Product[]>([]);
@@ -328,9 +363,26 @@ const ProductList: React.FC = () => {
                                 Featured
                               </span>
                             )}
+                            
+                            {/* Wishlist Heart Toggle */}
+                            <button
+                              onClick={(e) => handleToggleWishlist(e, prod.id)}
+                              className="absolute top-3 right-3 p-2 bg-slate-950/70 border border-slate-800/80 hover:bg-slate-900 rounded-full text-slate-400 hover:text-red-500 transition-all cursor-pointer z-20 group/heart"
+                              title="Add to Wishlist"
+                            >
+                              <Heart 
+                                size={15} 
+                                className={`transition-all duration-350 ${
+                                  isInWishlist(prod.id) 
+                                    ? "fill-red-500 text-red-500 scale-110" 
+                                    : "text-slate-400 group-hover/heart:scale-110"
+                                }`} 
+                              />
+                            </button>
+
                             {/* Stock status tag */}
                             {totalStock === 0 && (
-                              <span className="absolute top-3 right-3 bg-red-600/90 text-white text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md">
+                              <span className="absolute top-14 right-3 bg-red-600/90 text-white text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md">
                                 Out of Stock
                               </span>
                             )}
@@ -338,7 +390,7 @@ const ProductList: React.FC = () => {
                             {/* Dark overlay with hover details */}
                             <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
                               <span className="bg-slate-900 border border-slate-750 text-slate-100 rounded-full p-3 shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75">
-                                <Eye size={18} />
+                                  <Eye size={18} />
                               </span>
                             </div>
                           </div>

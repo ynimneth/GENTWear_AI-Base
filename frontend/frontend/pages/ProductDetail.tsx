@@ -3,12 +3,16 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, ShoppingCart, ShieldCheck, Truck, RotateCcw, 
-  Plus, Minus, RefreshCw, AlertCircle, Check
+  Plus, Minus, RefreshCw, AlertCircle, Check, Heart
 } from 'lucide-react';
 import { productService } from '../services/productService';
 import { Product, ProductVariant, ProductImage } from '../types';
 import { getImageUrl } from './ProductList';
 import { toast } from 'react-hot-toast';
+import { useCartStore } from '../store/cartStore';
+import { useWishlistStore } from '../store/wishlistStore';
+import { useAuthStore } from '../store/authStore';
+import { gsap } from 'gsap';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +27,83 @@ const ProductDetail: React.FC = () => {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+
+  const { addToCart, setIsOpen } = useCartStore() as any;
+  const { toggleWishlist, isInWishlist } = useWishlistStore() as any;
+  const { user } = useAuthStore() as any;
+
+  const handleToggleWishlist = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) {
+      toast.error('Please login to save items to your wishlist.');
+      navigate('/login');
+      return;
+    }
+
+    const heartIcon = e.currentTarget.querySelector('svg');
+    if (heartIcon) {
+      gsap.fromTo(heartIcon, 
+        { scale: 0.8 }, 
+        { scale: 1.35, duration: 0.2, yoyo: true, repeat: 1, ease: 'back.out(2)' }
+      );
+    }
+
+    if (product) {
+      const res = await toggleWishlist(product.id);
+      if (res.success) {
+        if (res.added) {
+          toast.success('Added to wishlist!');
+        } else {
+          toast.success('Removed from wishlist.');
+        }
+      } else {
+        toast.error(res.message);
+      }
+    }
+  };
+
+  const runFlyToCartAnimation = () => {
+    const imgEl = document.querySelector('.main-product-image');
+    const cartEl = document.getElementById('navbar-cart-btn');
+    if (!imgEl || !cartEl) return;
+
+    const imgRect = imgEl.getBoundingClientRect();
+    const cartRect = cartEl.getBoundingClientRect();
+
+    // Create fly clone element
+    const clone = document.createElement('img');
+    clone.src = getImageUrl(selectedImage);
+    clone.style.position = 'fixed';
+    clone.style.top = `${imgRect.top}px`;
+    clone.style.left = `${imgRect.left}px`;
+    clone.style.width = `${imgRect.width}px`;
+    clone.style.height = `${imgRect.height}px`;
+    clone.style.objectFit = 'cover';
+    clone.style.borderRadius = '1rem';
+    clone.style.zIndex = '9999';
+    clone.style.pointerEvents = 'none';
+    document.body.appendChild(clone);
+
+    // Curve fly path towards the navbar cart button coordinates
+    gsap.to(clone, {
+      top: cartRect.top + 8,
+      left: cartRect.left + 8,
+      width: 24,
+      height: 30,
+      opacity: 0.15,
+      rotation: 360,
+      duration: 0.85,
+      ease: "power2.inOut",
+      onComplete: () => {
+        clone.remove();
+        // Scale bounce the cart button
+        gsap.fromTo(cartEl, 
+          { scale: 1 }, 
+          { scale: 1.35, duration: 0.15, yoyo: true, repeat: 1, ease: "power1.inOut" }
+        );
+      }
+    });
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -117,7 +198,7 @@ const ProductDetail: React.FC = () => {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!matchedVariant) {
       toast.error('Please select a valid variant combination.');
       return;
@@ -127,12 +208,24 @@ const ProductDetail: React.FC = () => {
       return;
     }
 
-    toast.success(
-      <div className="flex flex-col text-xs">
-        <span className="font-bold text-slate-100">Added to Cart!</span>
-        <span className="text-slate-400">{product.name} ({selectedColor || ''} {selectedSize ? `- Size ${selectedSize}` : ''}) x{quantity}</span>
-      </div>
-    );
+    runFlyToCartAnimation();
+
+    const res = await addToCart(product.id, matchedVariant.id, quantity);
+    if (res.success) {
+      toast.success(
+        <div className="flex flex-col text-xs text-left">
+          <span className="font-bold text-slate-100">Added to Cart!</span>
+          <span className="text-slate-400">{product.name} ({selectedColor || ''} {selectedSize ? `- Size ${selectedSize}` : ''}) x{quantity}</span>
+        </div>
+      );
+      
+      // Delay drawer opening slightly to let user see flying animation finish
+      setTimeout(() => {
+        setIsOpen(true);
+      }, 900);
+    } else {
+      toast.error(res.message);
+    }
   };
 
   return (
@@ -166,7 +259,7 @@ const ProductDetail: React.FC = () => {
                 transition={{ duration: 0.3 }}
                 src={getImageUrl(selectedImage)}
                 alt={product.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover main-product-image"
               />
               {product.is_featured && (
                 <span className="absolute top-4 left-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-extrabold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-md">
@@ -245,7 +338,7 @@ const ProductDetail: React.FC = () => {
                     {uniqueColors.map((color, idx) => (
                       <button
                         key={idx}
-                        onClick={() => { setSelectedColor(color.name); setQuantity(1); }}
+                        onClick={() => { setSelectedColor(color.name || null); setQuantity(1); }}
                         style={{ backgroundColor: color.hex || '' }}
                         title={color.name || ''}
                         className={`w-8 h-8 rounded-full border border-slate-950 ring-2 transition-all flex items-center justify-center cursor-pointer ${
@@ -276,7 +369,7 @@ const ProductDetail: React.FC = () => {
                     {uniqueSizes.map((size, idx) => (
                       <button
                         key={idx}
-                        onClick={() => { setSelectedSize(size); setQuantity(1); }}
+                        onClick={() => { setSelectedSize(size || null); setQuantity(1); }}
                         className={`min-w-10 h-10 px-3 rounded-lg border text-xs font-bold transition-all uppercase cursor-pointer ${
                           selectedSize === size 
                             ? 'bg-indigo-600 border-indigo-500 text-white shadow-md' 
@@ -341,15 +434,32 @@ const ProductDetail: React.FC = () => {
             {/* Action panel (Add to Cart / Trust markers) */}
             <div className="mt-8 space-y-6">
               
-              {/* Add to Cart button */}
-              <button
-                onClick={handleAddToCart}
-                disabled={stockAvailable === 0 || !matchedVariant}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-indigo-600/15 cursor-pointer active:scale-98"
-              >
-                <ShoppingCart size={18} />
-                {stockAvailable === 0 ? 'Out of Stock' : !matchedVariant ? 'Choose Specifications' : 'Add to Shopping Bag'}
-              </button>
+              {/* Add to Cart + Wishlist buttons */}
+              <div className="flex gap-4">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={stockAvailable === 0 || !matchedVariant}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-indigo-600/15 cursor-pointer active:scale-98"
+                >
+                  <ShoppingCart size={18} />
+                  {stockAvailable === 0 ? 'Out of Stock' : !matchedVariant ? 'Choose Specifications' : 'Add to Shopping Bag'}
+                </button>
+
+                <button
+                  onClick={handleToggleWishlist}
+                  className="p-4 bg-slate-900 border border-slate-850 hover:border-slate-800 text-slate-400 hover:text-red-500 rounded-xl transition-all cursor-pointer flex items-center justify-center group/heart"
+                  title="Add to Wishlist"
+                >
+                  <Heart 
+                    size={20} 
+                    className={`transition-all duration-350 ${
+                      isInWishlist(product.id) 
+                        ? "fill-red-500 text-red-500 scale-110" 
+                        : "text-slate-400 group-hover/heart:scale-115"
+                    }`}
+                  />
+                </button>
+              </div>
 
               {/* Service trust badges */}
               <div className="grid grid-cols-3 gap-4 border-t border-slate-850 pt-6">

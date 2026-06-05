@@ -25,10 +25,14 @@ app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 const authRouter = require('./routes/auth');
 const categoriesRouter = require('./routes/categories');
 const productsRouter = require('./routes/products');
+const cartRouter = require('./routes/cart');
+const wishlistRouter = require('./routes/wishlist');
 
 app.use('/auth', authRouter);
 app.use('/categories', categoriesRouter);
 app.use('/products', productsRouter);
+app.use('/cart', cartRouter);
+app.use('/wishlist', wishlistRouter);
 
 
 // Test Protected / Admin Routes
