@@ -18,9 +18,18 @@ app.use(cors({
 app.use(express.json());   // Parses incoming JSON request bodies
 app.use(cookieParser());   // Parses cookies attached to client requests
 
+// Serve static files for uploaded product images
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+
 // Routes
 const authRouter = require('./routes/auth');
+const categoriesRouter = require('./routes/categories');
+const productsRouter = require('./routes/products');
+
 app.use('/auth', authRouter);
+app.use('/categories', categoriesRouter);
+app.use('/products', productsRouter);
+
 
 // Test Protected / Admin Routes
 const auth = require('./middleware/auth');

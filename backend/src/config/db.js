@@ -15,6 +15,27 @@ const sequelize = new Sequelize(
 
 // Import models
 const User = require('../models/user')(sequelize);
+const Category = require('../models/category')(sequelize);
+const Product = require('../models/product')(sequelize);
+const ProductVariant = require('../models/productVariant')(sequelize);
+const ProductImage = require('../models/productImage')(sequelize);
+
+// Associations
+// Category self-reference
+Category.hasMany(Category, { as: 'subcategories', foreignKey: 'parent_id', onDelete: 'CASCADE' });
+Category.belongsTo(Category, { as: 'parent', foreignKey: 'parent_id' });
+
+// Category & Product
+Category.hasMany(Product, { foreignKey: 'category_id', onDelete: 'SET NULL' });
+Product.belongsTo(Category, { foreignKey: 'category_id', as: 'category' });
+
+// Product & ProductVariant
+Product.hasMany(ProductVariant, { as: 'variants', foreignKey: 'product_id', onDelete: 'CASCADE' });
+ProductVariant.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
+
+// Product & ProductImage
+Product.hasMany(ProductImage, { as: 'images', foreignKey: 'product_id', onDelete: 'CASCADE' });
+ProductImage.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 
 const connectDB = async () => {
   try {
@@ -26,4 +47,13 @@ const connectDB = async () => {
   }
 };
 
-module.exports = { sequelize, connectDB, User };
+module.exports = { 
+  sequelize, 
+  connectDB, 
+  User, 
+  Category, 
+  Product, 
+  ProductVariant, 
+  ProductImage 
+};
+
