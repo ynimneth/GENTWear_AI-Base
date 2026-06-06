@@ -26,6 +26,7 @@ const Order = require('../models/order')(sequelize);
 const OrderItem = require('../models/orderItem')(sequelize);
 const Banner = require('../models/banner')(sequelize);
 const Promotion = require('../models/promotion')(sequelize);
+const Review = require('../models/review')(sequelize);
 
 // Associations
 // Category self-reference
@@ -84,6 +85,14 @@ OrderItem.belongsTo(Product, { foreignKey: 'product_id' });
 ProductVariant.hasMany(OrderItem, { foreignKey: 'variant_id', onDelete: 'SET NULL' });
 OrderItem.belongsTo(ProductVariant, { as: 'variant', foreignKey: 'variant_id' });
 
+// User & Review
+User.hasMany(Review, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+Review.belongsTo(User, { foreignKey: 'user_id' });
+
+// Product & Review
+Product.hasMany(Review, { foreignKey: 'product_id', onDelete: 'CASCADE' });
+Review.belongsTo(Product, { foreignKey: 'product_id' });
+
 const connectDB = async () => {
   try {
     await sequelize.authenticate();
@@ -108,6 +117,7 @@ module.exports = {
   Order,
   OrderItem,
   Banner,
-  Promotion
+  Promotion,
+  Review
 };
 
