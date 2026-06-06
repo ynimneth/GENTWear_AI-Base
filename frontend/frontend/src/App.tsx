@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Toaster, toast } from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -486,6 +487,185 @@ const NavbarWrapper = () => {
   return showNavbar ? <Navbar /> : null;
 };
 
+// Page Transition Animation Wrapper
+const PageWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -15 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className="page-transition-container"
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+const AppContent: React.FC = () => {
+  const location = useLocation();
+
+  return (
+    <div className="bg-slate-950 min-h-screen text-slate-100 flex flex-col selection:bg-indigo-600 selection:text-white">
+      <NavbarWrapper />
+      
+      <main className="flex-1">
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            {/* Public e-commerce routes */}
+            <Route path="/" element={<Navigate to="/products" replace />} />
+            <Route path="/products" element={<PageWrapper><ProductList /></PageWrapper>} />
+            <Route path="/products/:id" element={<PageWrapper><ProductDetail /></PageWrapper>} />
+            <Route path="/wishlist" element={<PageWrapper><Wishlist /></PageWrapper>} />
+
+            {/* Public authentication routes */}
+            <Route path="/login" element={<PageWrapper><Login /></PageWrapper>} />
+            <Route path="/register" element={<PageWrapper><Register /></PageWrapper>} />
+
+            {/* Protected user routes */}
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <PageWrapper><ProfileView /></PageWrapper>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/checkout"
+              element={
+                <ProtectedRoute>
+                  <PageWrapper><Checkout /></PageWrapper>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Protected admin routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout>
+                    <PageWrapper><AdminDashboard /></PageWrapper>
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/products"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout>
+                    <PageWrapper><AdminProducts /></PageWrapper>
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/categories"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout>
+                    <PageWrapper><AdminCategories /></PageWrapper>
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/orders"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout>
+                    <PageWrapper><AdminOrders /></PageWrapper>
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/promotions"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout>
+                    <PageWrapper><AdminPromotions /></PageWrapper>
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/banners"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout>
+                    <PageWrapper><AdminBanners /></PageWrapper>
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/customers"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout>
+                    <PageWrapper><AdminCustomers /></PageWrapper>
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/reviews"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout>
+                    <PageWrapper><AdminReviews /></PageWrapper>
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Fallback routing */}
+            <Route path="*" element={<Navigate to="/products" replace />} />
+          </Routes>
+        </AnimatePresence>
+      </main>
+      
+      {/* Global Floating AI assistant widget */}
+      <AIAssistantWidget />
+
+      {/* Global Cart Slide-in Drawer */}
+      <CartDrawer />
+
+      {/* React Hot Toast setup */}
+      <Toaster 
+        position="top-right" 
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#0f172a',
+            color: '#f8fafc',
+            border: '1px solid #1e293b',
+            borderRadius: '0.75rem',
+            backdropFilter: 'blur(8px)',
+          },
+          success: {
+            iconTheme: {
+              primary: '#6366f1',
+              secondary: '#ffffff',
+            },
+          },
+        }}
+      />
+    </div>
+  );
+};
+
 function App() {
   const [isInitializing, setIsInitializing] = useState(true);
   const { user, refreshToken } = useAuthStore() as any;
@@ -524,161 +704,7 @@ function App() {
 
   return (
     <Router>
-      <div className="bg-slate-950 min-h-screen text-slate-100 flex flex-col selection:bg-indigo-600 selection:text-white">
-        <NavbarWrapper />
-        
-        <main className="flex-1">
-          <Routes>
-            {/* Public e-commerce routes */}
-            <Route path="/" element={<Navigate to="/products" replace />} />
-            <Route path="/products" element={<ProductList />} />
-            <Route path="/products/:id" element={<ProductDetail />} />
-            <Route path="/wishlist" element={<Wishlist />} />
-
-            {/* Public authentication routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-
-            {/* Protected user routes */}
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ProfileView />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/checkout"
-              element={
-                <ProtectedRoute>
-                  <Checkout />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Protected admin routes */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminLayout>
-                    <AdminDashboard />
-                  </AdminLayout>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/admin/products"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminLayout>
-                    <AdminProducts />
-                  </AdminLayout>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/admin/categories"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminLayout>
-                    <AdminCategories />
-                  </AdminLayout>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/admin/orders"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminLayout>
-                    <AdminOrders />
-                  </AdminLayout>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/admin/promotions"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminLayout>
-                    <AdminPromotions />
-                  </AdminLayout>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/admin/banners"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminLayout>
-                    <AdminBanners />
-                  </AdminLayout>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/admin/customers"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminLayout>
-                    <AdminCustomers />
-                  </AdminLayout>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/admin/reviews"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminLayout>
-                    <AdminReviews />
-                  </AdminLayout>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Fallback routing */}
-            <Route path="*" element={<Navigate to="/products" replace />} />
-          </Routes>
-        </main>
-        
-        {/* Global Floating AI assistant widget */}
-        <AIAssistantWidget />
-
-        {/* Global Cart Slide-in Drawer */}
-        <CartDrawer />
-
-        {/* React Hot Toast setup */}
-        <Toaster 
-          position="top-right" 
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#0f172a',
-              color: '#f8fafc',
-              border: '1px solid #1e293b',
-              borderRadius: '0.75rem',
-              backdropFilter: 'blur(8px)',
-            },
-            success: {
-              iconTheme: {
-                primary: '#6366f1',
-                secondary: '#ffffff',
-              },
-            },
-          }}
-        />
-      </div>
+      <AppContent />
     </Router>
   );
 }

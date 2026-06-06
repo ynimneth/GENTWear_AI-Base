@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -17,6 +17,7 @@ import { toast } from 'react-hot-toast';
 import { Trie } from '../algorithms/Trie';
 import { quickSort } from '../algorithms/quickSort';
 import api from '../lib/api';
+import { ScrollAnimate } from '../components/ScrollAnimate';
 
 export const getImageUrl = (url?: string) => {
   if (!url) return 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80'; // fallback placeholder
@@ -85,6 +86,49 @@ const ProductList: React.FC = () => {
   // Collaborative recommendations states
   const [collabRecs, setCollabRecs] = useState<Product[]>([]);
   const [collabLoading, setCollabLoading] = useState(false);
+
+  // Hero banner states and references
+  const [heroBanner, setHeroBanner] = useState<any | null>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const heroImgRef = useRef<HTMLImageElement>(null);
+
+  // Fetch public active banners
+  useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const { data } = await api.get('/products/banners');
+        const hero = data.find((b: any) => b.position === 'hero');
+        setHeroBanner(hero || null);
+      } catch (err) {
+        console.warn('Failed to load public hero banner:', err);
+      }
+    };
+    fetchBanners();
+  }, []);
+
+  // Parallax animation setup via ScrollTrigger
+  useEffect(() => {
+    let ctx = gsap.context(() => {
+      if (heroRef.current && heroImgRef.current) {
+        import('gsap/ScrollTrigger').then(({ ScrollTrigger }) => {
+          gsap.registerPlugin(ScrollTrigger);
+
+          gsap.to(heroImgRef.current, {
+            yPercent: 30,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: heroRef.current,
+              start: 'top top',
+              end: 'bottom top',
+              scrub: true,
+            },
+          });
+        });
+      }
+    });
+
+    return () => ctx.revert();
+  }, [heroBanner]);
 
   // Load all product names into the autocomplete Trie on mount
   useEffect(() => {
@@ -238,6 +282,59 @@ const ProductList: React.FC = () => {
       <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-600/5 rounded-full blur-[150px] pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto relative z-10">
+        {/* Parallax Hero Banner */}
+        <div 
+          ref={heroRef} 
+          className="relative h-[40vh] md:h-[52vh] w-full overflow-hidden rounded-3xl mb-12 border border-slate-900 shadow-2xl"
+        >
+          <img
+            ref={heroImgRef}
+            src={heroBanner ? getImageUrl(heroBanner.image_url) : 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1920&q=80'}
+            alt="GENTWear Campaign"
+            className="absolute top-0 left-0 w-full h-[140%] object-cover brightness-40"
+            style={{ transform: 'translateY(-20%)' }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/20 flex flex-col justify-end p-8 md:p-12 text-left">
+            <div className="max-w-2xl space-y-4">
+              <span className="text-xs font-bold uppercase tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full w-fit">
+                New Season Campaign
+              </span>
+              <h1 className="text-3xl md:text-5xl font-black uppercase tracking-wider text-slate-100 leading-tight">
+                Sartorial Excellence
+              </h1>
+              <p className="text-slate-300 text-xs md:text-sm leading-relaxed max-w-lg">
+                Handcrafted premium menswear collections designed for the modern gentleman. Discover clean silhouettes, luxurious fabrics, and flawless detailing.
+              </p>
+              <div className="flex gap-3 pt-1">
+                <button 
+                  onClick={() => {
+                    const el = document.getElementById('catalog-grid-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] uppercase tracking-wider px-5 py-3 rounded-xl shadow-lg shadow-indigo-600/20 transition-all cursor-pointer hover:-translate-y-0.5 active:scale-98"
+                >
+                  Shop Catalog
+                </button>
+                <button 
+                  onClick={() => {
+                    setIsAISearch(true);
+                    setSearch('suit');
+                    setCurrentPage(1);
+                    setTimeout(() => fetchProducts(), 50);
+                    setTimeout(() => {
+                      const el = document.getElementById('catalog-grid-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                  }}
+                  className="bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 text-slate-200 font-bold text-[10px] uppercase tracking-wider px-5 py-3 rounded-xl backdrop-blur-md transition-all cursor-pointer hover:-translate-y-0.5 active:scale-98"
+                >
+                  Discover AI Matches
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Header Title */}
         <div className="mb-10 text-center md:text-left">
           <span className="text-indigo-400 text-xs font-bold tracking-widest uppercase mb-2 block">Premium Apparel</span>
@@ -250,7 +347,7 @@ const ProductList: React.FC = () => {
         </div>
 
         {/* Action Controls & Filters Bar */}
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div id="catalog-grid-section" className="flex flex-col lg:flex-row gap-8">
           
           {/* Sidebar Filters (Desktop) */}
           <aside className="hidden lg:block w-72 shrink-0 bg-slate-900/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-6 shadow-xl sticky top-6 self-start">
@@ -436,13 +533,23 @@ const ProductList: React.FC = () => {
                   </select>
                 </div>
               </div>
-            </div>
-
-            {/* Products Grid */}
+            </div>            {/* Products Grid */}
             {loading ? (
-              <div className="min-h-[400px] flex flex-col justify-center items-center">
-                <RefreshCw className="animate-spin text-indigo-500 mb-2" size={32} />
-                <p className="text-slate-400 text-sm animate-pulse">Loading products...</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-slate-900/30 border border-slate-850 rounded-2xl overflow-hidden shadow-lg flex flex-col h-full animate-shimmer">
+                    <div className="relative aspect-[4/5] bg-slate-900/60 overflow-hidden w-full"></div>
+                    <div className="p-5 flex-1 flex flex-col space-y-3">
+                      <div className="h-3 bg-slate-850 rounded w-1/3"></div>
+                      <div className="h-5 bg-slate-800/40 rounded w-3/4"></div>
+                      <div className="h-3.5 bg-slate-800/30 rounded w-1/2"></div>
+                      <div className="pt-3 border-t border-slate-850 flex justify-between items-center mt-auto">
+                        <div className="h-5 bg-slate-800/40 rounded w-1/4"></div>
+                        <div className="h-3 bg-slate-850 rounded w-1/3"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : products.length === 0 ? (
               <div className="min-h-[400px] bg-slate-900/10 border border-dashed border-slate-800 rounded-2xl flex flex-col justify-center items-center p-8 text-center">
@@ -470,102 +577,102 @@ const ProductList: React.FC = () => {
                       const colors = prod.variants
                         ?.map(v => ({ name: v.color, hex: v.color_hex }))
                         .filter((val, idx, self) => val.hex && self.findIndex(t => t.hex === val.hex) === idx) || [];
-
+ 
                       return (
-                        <motion.div
-                          key={prod.id}
-                          layout
-                          initial={{ opacity: 0, y: 15 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          whileHover={{ y: -6 }}
-                          transition={{ duration: 0.3 }}
-                          onClick={() => navigate(`/products/${prod.id}`)}
-                          className="bg-slate-900/40 backdrop-blur-xl border border-slate-850 hover:border-slate-700/80 rounded-2xl overflow-hidden shadow-lg group cursor-pointer flex flex-col h-full"
-                        >
-                          {/* Image container */}
-                          <div className="relative aspect-[4/5] bg-slate-950 overflow-hidden w-full">
-                            <img
-                              src={getImageUrl(primaryImg?.url)}
-                              alt={prod.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                            />
-                            {/* Featured tag */}
-                            {prod.is_featured && (
-                              <span className="absolute top-3 left-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md">
-                                Featured
-                              </span>
-                            )}
-                            
-                            {/* Wishlist Heart Toggle */}
-                            <button
-                              onClick={(e) => handleToggleWishlist(e, prod.id)}
-                              className="absolute top-3 right-3 p-2 bg-slate-950/70 border border-slate-800/80 hover:bg-slate-900 rounded-full text-slate-400 hover:text-red-500 transition-all cursor-pointer z-20 group/heart"
-                              title="Add to Wishlist"
-                            >
-                              <Heart 
-                                size={15} 
-                                className={`transition-all duration-350 ${
-                                  isInWishlist(prod.id) 
-                                    ? "fill-red-500 text-red-500 scale-110" 
-                                    : "text-slate-400 group-hover/heart:scale-110"
-                                }`} 
+                        <ScrollAnimate key={prod.id} className="h-full">
+                          <motion.div
+                            layout
+                            initial={{ opacity: 0, y: 15 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.3 }}
+                            onClick={() => navigate(`/products/${prod.id}`)}
+                            className="bg-slate-900/40 backdrop-blur-xl border border-slate-850 hover:border-slate-700/80 hover:shadow-2xl hover:shadow-indigo-500/10 rounded-2xl overflow-hidden group cursor-pointer flex flex-col h-full transition-all duration-350"
+                          >
+                            {/* Image container */}
+                            <div className="relative aspect-[4/5] bg-slate-950 overflow-hidden w-full">
+                              <img
+                                src={getImageUrl(primaryImg?.url)}
+                                alt={prod.name}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                               />
-                            </button>
-
-                            {/* Stock status tag */}
-                            {totalStock === 0 && (
-                              <span className="absolute top-14 right-3 bg-red-600/90 text-white text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md">
-                                Out of Stock
-                              </span>
-                            )}
-
-                            {/* Dark overlay with hover details */}
-                            <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
-                              <span className="bg-slate-900 border border-slate-750 text-slate-100 rounded-full p-3 shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75">
-                                  <Eye size={18} />
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Info panel */}
-                          <div className="p-5 flex-1 flex flex-col">
-                            <span className="text-xs text-indigo-400 font-semibold mb-1 uppercase tracking-wider block">
-                              {prod.category?.name || 'Uncategorized'}
-                            </span>
-                            <h3 className="text-base font-bold text-slate-100 line-clamp-1 group-hover:text-indigo-300 transition-colors mb-2">
-                              {prod.name}
-                            </h3>
-
-                            {/* Color Swatches */}
-                            {colors.length > 0 && (
-                              <div className="flex gap-1.5 mb-3 flex-wrap">
-                                {colors.map((c, i) => (
-                                  <div
-                                    key={i}
-                                    style={{ backgroundColor: c.hex || '' }}
-                                    title={c.name || ''}
-                                    className="w-3.5 h-3.5 rounded-full border border-slate-950 ring-1 ring-slate-800"
-                                  ></div>
-                                ))}
+                              {/* Featured tag */}
+                              {prod.is_featured && (
+                                <span className="absolute top-3 left-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md z-10">
+                                  Featured
+                                </span>
+                              )}
+                              
+                              {/* Wishlist Heart Toggle */}
+                              <button
+                                onClick={(e) => handleToggleWishlist(e, prod.id)}
+                                className="absolute top-3 right-3 p-2 bg-slate-950/70 border border-slate-800/80 hover:bg-slate-900 rounded-full text-slate-400 hover:text-red-500 transition-all cursor-pointer z-30 group/heart"
+                                title="Add to Wishlist"
+                              >
+                                <Heart 
+                                  size={15} 
+                                  className={`transition-all duration-350 ${
+                                    isInWishlist(prod.id) 
+                                      ? "fill-red-500 text-red-500 scale-110" 
+                                      : "text-slate-400 group-hover/heart:scale-110"
+                                  }`} 
+                                />
+                              </button>
+ 
+                              {/* Stock status tag */}
+                              {totalStock === 0 && (
+                                <span className="absolute top-14 right-3 bg-red-600/90 text-white text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md z-10">
+                                  Out of Stock
+                                </span>
+                              )}
+ 
+                              {/* Quick View slide-up overlay */}
+                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-950/90 via-slate-950/50 to-transparent p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-350 ease-out flex justify-center z-20">
+                                <span className="bg-indigo-600 hover:bg-indigo-550 text-white font-bold text-xs py-2.5 px-5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 transition-all active:scale-95 cursor-pointer">
+                                  <Eye size={14} /> Quick View
+                                </span>
                               </div>
-                            )}
-
-                            <div className="mt-auto pt-3 border-t border-slate-850 flex justify-between items-center">
-                              <div>
-                                <span className="text-lg font-bold text-slate-100">${parseFloat(prod.price as any).toFixed(2)}</span>
-                                {prod.compare_at_price && (
-                                  <span className="text-xs line-through text-slate-500 ml-2">
-                                    ${parseFloat(prod.compare_at_price as any).toFixed(2)}
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                                {totalStock > 0 ? `${totalStock} in stock` : 'Sold Out'}
-                              </span>
                             </div>
-                          </div>
-                        </motion.div>
+ 
+                            {/* Info panel */}
+                            <div className="p-5 flex-1 flex flex-col">
+                              <span className="text-xs text-indigo-400 font-semibold mb-1 uppercase tracking-wider block">
+                                {prod.category?.name || 'Uncategorized'}
+                              </span>
+                              <h3 className="text-base font-bold text-slate-100 line-clamp-1 group-hover:text-indigo-300 transition-colors mb-2">
+                                {prod.name}
+                              </h3>
+ 
+                              {/* Color Swatches */}
+                              {colors.length > 0 && (
+                                <div className="flex gap-1.5 mb-3 flex-wrap">
+                                  {colors.map((c, i) => (
+                                    <div
+                                      key={i}
+                                      style={{ backgroundColor: c.hex || '' }}
+                                      title={c.name || ''}
+                                      className="w-3.5 h-3.5 rounded-full border border-slate-950 ring-1 ring-slate-800"
+                                    ></div>
+                                  ))}
+                                </div>
+                              )}
+ 
+                              <div className="mt-auto pt-3 border-t border-slate-850 flex justify-between items-center">
+                                <div>
+                                  <span className="text-lg font-bold text-slate-100">${parseFloat(prod.price as any).toFixed(2)}</span>
+                                  {prod.compare_at_price && (
+                                    <span className="text-xs line-through text-slate-500 ml-2">
+                                      ${parseFloat(prod.compare_at_price as any).toFixed(2)}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-slate-550 font-medium uppercase tracking-wider">
+                                  {totalStock > 0 ? `${totalStock} in stock` : 'Sold Out'}
+                                </span>
+                              </div>
+                            </div>
+                          </motion.div>
+                        </ScrollAnimate>
                       );
                     })}
                   </AnimatePresence>
@@ -573,7 +680,7 @@ const ProductList: React.FC = () => {
 
                 {/* Collaborative Recommendations Shelf */}
                 {!collabLoading && collabRecs.length > 0 && (
-                  <div className="mt-16 pt-12 border-t border-slate-900 text-left space-y-8">
+                  <ScrollAnimate className="mt-16 pt-12 border-t border-slate-900 text-left space-y-8">
                     <div>
                       <span className="text-xs text-indigo-400 font-extrabold uppercase tracking-widest flex items-center gap-1.5">
                         <Sparkles size={12} className="animate-pulse" /> Personalized Curation
@@ -611,7 +718,7 @@ const ProductList: React.FC = () => {
                         );
                       })}
                     </div>
-                  </div>
+                  </ScrollAnimate>
                 )}
 
                 {/* Pagination Controls */}

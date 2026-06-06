@@ -187,6 +187,33 @@ router.get('/recommendations/collaborative', async (req, res) => {
   }
 });
 
+// GET /products/banners - Get active public banners
+router.get('/banners', async (req, res) => {
+  try {
+    const { Banner } = require('../config/db');
+    const { Op } = require('sequelize');
+    const now = new Date();
+    const banners = await Banner.findAll({
+      where: {
+        is_active: true,
+        [Op.or]: [
+          { start_date: null },
+          { start_date: { [Op.lte]: now } }
+        ],
+        [Op.or]: [
+          { end_date: null },
+          { end_date: { [Op.gte]: now } }
+        ]
+      },
+      order: [['createdAt', 'DESC']]
+    });
+    return res.json(banners);
+  } catch (err) {
+    console.error('Fetch public banners error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // GET /products/:id/recommendations - Similarity Recommendations
 router.get('/:id/recommendations', async (req, res) => {
   const { id } = req.params;

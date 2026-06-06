@@ -16,6 +16,7 @@ import { useWishlistStore } from '../store/wishlistStore';
 import { useAuthStore } from '../store/authStore';
 import { gsap } from 'gsap';
 import api from '../lib/api';
+import { ScrollAnimate } from '../components/ScrollAnimate';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -646,7 +647,7 @@ const ProductDetail: React.FC = () => {
 
         {/* Similarity Recommendations Shelf */}
         {!recsLoading && recommendations.length > 0 && (
-          <div className="mt-20 pt-12 border-t border-slate-850/60 text-left space-y-8 animate-fadeIn">
+          <ScrollAnimate className="mt-20 pt-12 border-t border-slate-850/60 text-left space-y-8 animate-fadeIn">
             <div>
               <span className="text-xs text-indigo-400 font-extrabold uppercase tracking-widest flex items-center gap-1">
                 <Sparkles size={11} className="animate-pulse" /> Curated Selection
@@ -677,18 +678,18 @@ const ProductDetail: React.FC = () => {
                       </h3>
                       <div className="mt-auto pt-2 border-t border-slate-850/40 flex justify-between items-center text-xs">
                         <span className="font-extrabold text-slate-100">${parseFloat(prod.price as any).toFixed(2)}</span>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">View Item →</span>
+                        <span className="text-[10px] text-slate-550 font-bold uppercase tracking-wider">View Item →</span>
                       </div>
                     </div>
                   </div>
                 );
               })}
             </div>
-          </div>
+          </ScrollAnimate>
         )}
 
         {/* Customer Reviews Section */}
-        <div className="mt-20 pt-12 border-t border-slate-850/60 text-left space-y-10">
+        <ScrollAnimate className="mt-20 pt-12 border-t border-slate-850/60 text-left space-y-10">
           <div>
             <h2 className="text-2xl font-black uppercase tracking-wider text-slate-150">Customer Reviews</h2>
             <p className="text-slate-500 text-xs mt-1">Share your experience and verify ratings of fellow customers</p>
@@ -930,7 +931,7 @@ const ProductDetail: React.FC = () => {
             </div>
 
           </div>
-        </div>
+        </ScrollAnimate>
 
       </div>
     </div>
