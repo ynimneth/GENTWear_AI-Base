@@ -114,6 +114,10 @@ router.post('/login', [
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    if (user.is_blocked) {
+      return res.status(403).json({ message: 'Your account has been suspended' });
+    }
+
     // 2. Check email verified
     if (!user.is_verified) {
       return res.status(403).json({ message: 'Please verify your email first' });

@@ -11,6 +11,12 @@ import AdminProducts from '../pages/AdminProducts';
 import AdminCategories from '../pages/AdminCategories';
 import Wishlist from '../pages/Wishlist';
 import Checkout from '../pages/Checkout';
+import AdminDashboard from '../pages/admin/AdminDashboard';
+import AdminOrders from '../pages/admin/AdminOrders';
+import AdminPromotions from '../pages/admin/AdminPromotions';
+import AdminBanners from '../pages/admin/AdminBanners';
+import AdminCustomers from '../pages/admin/AdminCustomers';
+import AdminLayout from '../components/admin/AdminLayout';
 import CartDrawer from '../components/CartDrawer';
 import { useCartStore } from '../store/cartStore';
 import { useWishlistStore } from '../store/wishlistStore';
@@ -555,7 +561,9 @@ function App() {
               path="/admin"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminView />
+                  <AdminLayout>
+                    <AdminDashboard />
+                  </AdminLayout>
                 </ProtectedRoute>
               }
             />
@@ -564,7 +572,9 @@ function App() {
               path="/admin/products"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminProducts />
+                  <AdminLayout>
+                    <AdminProducts />
+                  </AdminLayout>
                 </ProtectedRoute>
               }
             />
@@ -573,7 +583,53 @@ function App() {
               path="/admin/categories"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminCategories />
+                  <AdminLayout>
+                    <AdminCategories />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/orders"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout>
+                    <AdminOrders />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/promotions"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout>
+                    <AdminPromotions />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/banners"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout>
+                    <AdminBanners />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/customers"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout>
+                    <AdminCustomers />
+                  </AdminLayout>
                 </ProtectedRoute>
               }
             />

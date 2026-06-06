@@ -36,6 +36,7 @@ const wishlistRouter = require('./routes/wishlist');
 const addressesRouter = require('./routes/addresses');
 const ordersRouter = require('./routes/orders');
 const paymentsRouter = require('./routes/payments');
+const adminRouter = require('./routes/admin');
 
 app.use('/auth', authRouter);
 app.use('/categories', categoriesRouter);
@@ -45,6 +46,7 @@ app.use('/wishlist', wishlistRouter);
 app.use('/addresses', addressesRouter);
 app.use('/orders', ordersRouter);
 app.use('/payments', paymentsRouter);
+app.use('/admin', adminRouter);
 
 
 // Test Protected / Admin Routes

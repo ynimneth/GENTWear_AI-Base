@@ -16,11 +16,15 @@ module.exports = async (req, res, next) => {
 
     // 3. Fetch fresh user from DB (catches deleted/banned accounts)
     const user = await User.findByPk(decoded.userId, {
-      attributes: ['id', 'email', 'full_name', 'role', 'is_verified']
+      attributes: ['id', 'email', 'full_name', 'role', 'is_verified', 'is_blocked']
     });
 
     if (!user) {
       return res.status(401).json({ message: 'User no longer exists' });
+    }
+
+    if (user.is_blocked) {
+      return res.status(403).json({ message: 'Your account has been suspended' });
     }
 
     // 4. Attach to request

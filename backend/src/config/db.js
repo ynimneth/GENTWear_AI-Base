@@ -24,6 +24,8 @@ const WishlistItem = require('../models/wishlistItem')(sequelize);
 const Address = require('../models/address')(sequelize);
 const Order = require('../models/order')(sequelize);
 const OrderItem = require('../models/orderItem')(sequelize);
+const Banner = require('../models/banner')(sequelize);
+const Promotion = require('../models/promotion')(sequelize);
 
 // Associations
 // Category self-reference
@@ -104,6 +106,8 @@ module.exports = {
   WishlistItem,
   Address,
   Order,
-  OrderItem
+  OrderItem,
+  Banner,
+  Promotion
 };
 
