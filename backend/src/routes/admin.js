@@ -643,4 +643,43 @@ router.delete('/reviews/:id', async (req, res) => {
   }
 });
 
+// GET /admin/inventory/low-stock-heap - Sorted list of low-stock variants via MinHeap
+router.get('/inventory/low-stock-heap', async (req, res) => {
+  try {
+    const MinHeap = require('../algorithms/MinHeap');
+    
+    const variants = await ProductVariant.findAll({
+      include: [{ model: Product, attributes: ['name'] }]
+    });
+
+    const heap = new MinHeap((a, b) => a.stock_qty - b.stock_qty);
+    for (const v of variants) {
+      heap.insert(v);
+    }
+
+    const lowStockAlerts = [];
+    while (heap.size() > 0) {
+      const minVal = heap.extractMin();
+      if (minVal.stock_qty < 10) {
+        lowStockAlerts.push({
+          id: minVal.id,
+          size: minVal.size,
+          color: minVal.color,
+          sku: minVal.sku,
+          stock_qty: minVal.stock_qty,
+          productName: minVal.Product?.name || 'Unknown'
+        });
+      } else {
+        // Early exit: heap elements are in sorted order, so all remaining elements are >= 10
+        break;
+      }
+    }
+
+    return res.json(lowStockAlerts);
+  } catch (err) {
+    console.error('MinHeap low-stock route error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 module.exports = router;

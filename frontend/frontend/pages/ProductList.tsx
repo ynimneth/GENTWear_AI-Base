@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   SlidersHorizontal, Search, ChevronDown, RefreshCw, 
-  Grid, List, Eye, ShoppingBag, ArrowUpDown, X, Heart
+  Grid, List, Eye, ShoppingBag, ArrowUpDown, X, Heart, Sparkles
 } from 'lucide-react';
 import { productService } from '../services/productService';
 import { categoryService } from '../services/categoryService';
@@ -12,6 +12,11 @@ import { useWishlistStore } from '../store/wishlistStore';
 import { useAuthStore } from '../store/authStore';
 import { gsap } from 'gsap';
 import { toast } from 'react-hot-toast';
+
+// Trie, QuickSort and API imports
+import { Trie } from '../algorithms/Trie';
+import { quickSort } from '../algorithms/quickSort';
+import api from '../lib/api';
 
 export const getImageUrl = (url?: string) => {
   if (!url) return 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80'; // fallback placeholder
@@ -71,6 +76,67 @@ const ProductList: React.FC = () => {
   const [sort, setSort] = useState('newest');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
+  // CS Algorithms & AI search states
+  const [isAISearch, setIsAISearch] = useState(false);
+  const [trie] = useState(() => new Trie());
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Collaborative recommendations states
+  const [collabRecs, setCollabRecs] = useState<Product[]>([]);
+  const [collabLoading, setCollabLoading] = useState(false);
+
+  // Load all product names into the autocomplete Trie on mount
+  useEffect(() => {
+    const seedTrie = async () => {
+      try {
+        const data = await productService.getProducts({ limit: 100 });
+        if (data.products) {
+          data.products.forEach((p: Product) => trie.insert(p.name));
+        }
+      } catch (err) {
+        console.warn('Failed to seed Trie client-side:', err);
+      }
+    };
+    seedTrie();
+  }, [trie]);
+
+  // Fetch collaborative recommendations
+  useEffect(() => {
+    const fetchCollabRecs = async () => {
+      setCollabLoading(true);
+      try {
+        const { data } = await api.get('/products/recommendations/collaborative');
+        setCollabRecs(data || []);
+      } catch (err) {
+        console.warn('Failed to fetch collaborative recommendations:', err);
+      } finally {
+        setCollabLoading(false);
+      }
+    };
+    fetchCollabRecs();
+  }, [user]);
+
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    if (val.trim()) {
+      const prefixMatches = trie.searchPrefix(val);
+      setSuggestions(prefixMatches);
+      setShowSuggestions(true);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearch(suggestion);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setCurrentPage(1);
+    setTimeout(() => fetchProducts(), 0);
+  };
+
   // Fetch initial categories
   useEffect(() => {
     const fetchCategories = async () => {
@@ -88,20 +154,45 @@ const ProductList: React.FC = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const params: any = {
-        page: currentPage,
-        limit: 9,
-        sort
-      };
-      if (selectedCategory) params.category_id = selectedCategory;
-      if (search) params.search = search;
-      if (minPrice) params.min_price = minPrice;
-      if (maxPrice) params.max_price = maxPrice;
+      if (isAISearch && search.trim()) {
+        const { data } = await api.get('/products/search', {
+          params: { q: search }
+        });
+        
+        let sortedList = data || [];
+        if (sort === 'price_asc') {
+          sortedList = quickSort(sortedList, (a: Product, b: Product) => parseFloat(a.price as any) - parseFloat(b.price as any));
+        } else if (sort === 'price_desc') {
+          sortedList = quickSort(sortedList, (a: Product, b: Product) => parseFloat(b.price as any) - parseFloat(a.price as any));
+        }
+        
+        setProducts(sortedList);
+        setTotalProducts(sortedList.length);
+        setTotalPages(1);
+      } else {
+        const params: any = {
+          page: currentPage,
+          limit: 9,
+          sort
+        };
+        if (selectedCategory) params.category_id = selectedCategory;
+        if (search) params.search = search;
+        if (minPrice) params.min_price = minPrice;
+        if (maxPrice) params.max_price = maxPrice;
 
-      const data = await productService.getProducts(params);
-      setProducts(data.products || []);
-      setTotalProducts(data.total || 0);
-      setTotalPages(data.pages || 1);
+        const data = await productService.getProducts(params);
+        let sortedList = data.products || [];
+        
+        if (sort === 'price_asc') {
+          sortedList = quickSort(sortedList, (a: Product, b: Product) => parseFloat(a.price as any) - parseFloat(b.price as any));
+        } else if (sort === 'price_desc') {
+          sortedList = quickSort(sortedList, (a: Product, b: Product) => parseFloat(b.price as any) - parseFloat(a.price as any));
+        }
+
+        setProducts(sortedList);
+        setTotalProducts(data.total || 0);
+        setTotalPages(data.pages || 1);
+      }
     } catch (err) {
       console.error('Error fetching products:', err);
     } finally {
@@ -120,7 +211,7 @@ const ProductList: React.FC = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [selectedCategory, sort, currentPage]);
+  }, [selectedCategory, sort, currentPage, isAISearch]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,6 +225,7 @@ const ProductList: React.FC = () => {
     setMinPrice('');
     setMaxPrice('');
     setSort('newest');
+    setIsAISearch(false);
     setCurrentPage(1);
     // Fetch immediately
     setTimeout(() => fetchProducts(), 0);
@@ -174,22 +266,63 @@ const ProductList: React.FC = () => {
               </button>
             </div>
 
-            {/* Search Input */}
-            <form onSubmit={handleSearchSubmit} className="mb-6">
+            {/* Search Input with autocomplete suggestions */}
+            <form onSubmit={handleSearchSubmit} className="mb-4 relative">
               <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Search</label>
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Shirts, Blazers..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onFocus={() => setShowSuggestions(suggestions.length > 0)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                   className="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-2.5 pl-4 pr-10 text-sm focus:outline-none focus:border-indigo-500/80 text-slate-100 placeholder-slate-500"
                 />
                 <button type="submit" className="absolute right-3 top-3 text-slate-400 hover:text-slate-200">
                   <Search size={16} />
                 </button>
               </div>
+
+              {/* Trie Autocomplete Suggestion Dropdown */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-slate-950/95 backdrop-blur-md border border-slate-800 rounded-xl shadow-2xl overflow-hidden z-30 p-1 flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+                  {suggestions.map((sug, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSuggestionClick(sug)}
+                      className="text-left text-xs text-slate-350 hover:text-indigo-400 hover:bg-slate-900 px-3.5 py-2 rounded-lg transition-colors cursor-pointer"
+                    >
+                      {sug}
+                    </button>
+                  ))}
+                </div>
+              )}
             </form>
+
+            {/* AI Search Toggle Switch */}
+            <div className="mb-6 bg-indigo-950/10 border border-indigo-500/10 rounded-xl p-4 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-1">
+                  <Sparkles size={11} /> AI Semantic Search
+                </span>
+                <p className="text-[9px] text-slate-450 mt-0.5 leading-normal">
+                  Vector search matching ideas and descriptions
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setIsAISearch(!isAISearch); setCurrentPage(1); }}
+                className={`w-10 h-6 rounded-full p-1 transition-colors relative cursor-pointer ${
+                  isAISearch ? 'bg-indigo-600' : 'bg-slate-800'
+                }`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${
+                  isAISearch ? 'translate-x-4' : 'translate-x-0'
+                }`}></div>
+              </button>
+            </div>
 
             {/* Categories Filter */}
             <div className="mb-6">
@@ -438,6 +571,49 @@ const ProductList: React.FC = () => {
                   </AnimatePresence>
                 </div>
 
+                {/* Collaborative Recommendations Shelf */}
+                {!collabLoading && collabRecs.length > 0 && (
+                  <div className="mt-16 pt-12 border-t border-slate-900 text-left space-y-8">
+                    <div>
+                      <span className="text-xs text-indigo-400 font-extrabold uppercase tracking-widest flex items-center gap-1.5">
+                        <Sparkles size={12} className="animate-pulse" /> Personalized Curation
+                      </span>
+                      <h2 className="text-xl font-bold uppercase tracking-wider text-slate-100 mt-1">Recommended For You</h2>
+                      <p className="text-slate-500 text-xs mt-1">Custom tailoring recommendations curated from your style profile and purchases</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                      {collabRecs.map((prod) => {
+                        const primaryImg = prod.images?.find(img => img.is_primary) || prod.images?.[0];
+                        return (
+                          <div
+                            key={prod.id}
+                            onClick={() => { navigate(`/products/${prod.id}`); window.scrollTo(0, 0); }}
+                            className="bg-slate-900/40 backdrop-blur-md border border-slate-850 hover:border-slate-700 rounded-2xl overflow-hidden shadow-lg group cursor-pointer flex flex-col h-full transition-all duration-300 hover:-translate-y-1.5"
+                          >
+                            <div className="relative aspect-[4/5] bg-slate-950 overflow-hidden w-full">
+                              <img
+                                src={getImageUrl(primaryImg?.url)}
+                                alt={prod.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                              />
+                            </div>
+                            <div className="p-4 flex flex-col flex-1">
+                              <h3 className="text-sm font-bold text-slate-200 line-clamp-1 group-hover:text-indigo-400 transition-colors">
+                                {prod.name}
+                              </h3>
+                              <div className="mt-auto pt-2 border-t border-slate-850/40 flex justify-between items-center text-xs">
+                                <span className="font-extrabold text-slate-100">${parseFloat(prod.price as any).toFixed(2)}</span>
+                                <span className="text-[10px] text-slate-550 font-bold uppercase tracking-wider">View Item →</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
                   <div className="mt-12 flex justify-center gap-2">
@@ -510,21 +686,62 @@ const ProductList: React.FC = () => {
               </div>
 
               {/* Mobile Search */}
-              <form onSubmit={handleSearchSubmit} className="mb-6">
+              <form onSubmit={handleSearchSubmit} className="mb-4 relative">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Search</label>
                 <div className="relative">
                   <input
                     type="text"
                     placeholder="Shirts, Blazers..."
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    onFocus={() => setShowSuggestions(suggestions.length > 0)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2.5 pl-4 pr-10 text-sm focus:outline-none focus:border-indigo-500/80 text-slate-100 placeholder-slate-500"
                   />
                   <button type="submit" className="absolute right-3 top-3 text-slate-400 hover:text-slate-200">
                     <Search size={16} />
                   </button>
                 </div>
+
+                {/* Autocomplete dropdown for mobile */}
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-slate-950/95 backdrop-blur-md border border-slate-850 rounded-xl shadow-2xl overflow-hidden z-30 p-1 flex flex-col gap-0.5 max-h-40 overflow-y-auto">
+                    {suggestions.map((sug, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => { handleSuggestionClick(sug); setShowMobileFilters(false); }}
+                        className="text-left text-xs text-slate-350 hover:text-indigo-400 hover:bg-slate-900 px-3 py-2 rounded-lg cursor-pointer"
+                      >
+                        {sug}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </form>
+
+              {/* AI Search Toggle Switch for mobile */}
+              <div className="mb-6 bg-indigo-950/10 border border-indigo-500/10 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-1">
+                    <Sparkles size={11} /> AI Semantic Search
+                  </span>
+                  <p className="text-[9px] text-slate-450 mt-0.5 leading-normal">
+                    Vector search matching descriptions
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setIsAISearch(!isAISearch); setCurrentPage(1); }}
+                  className={`w-10 h-6 rounded-full p-1 transition-colors relative cursor-pointer ${
+                    isAISearch ? 'bg-indigo-600' : 'bg-slate-800'
+                  }`}
+                >
+                  <div className={`w-4 h-4 bg-white rounded-full transition-transform ${
+                    isAISearch ? 'translate-x-4' : 'translate-x-0'
+                  }`}></div>
+                </button>
+              </div>
 
               {/* Mobile Categories */}
               <div className="mb-6">

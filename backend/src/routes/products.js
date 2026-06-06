@@ -9,6 +9,29 @@ const { upload, handleUpload } = require('../services/uploadService');
 const fs = require('fs');
 const path = require('path');
 
+// AI Vector Service, Redis, and Trie autocomplete imports
+const redis = require('../config/redis');
+const aiService = require('../services/aiService');
+const Trie = require('../algorithms/Trie');
+
+const productTrie = new Trie();
+
+// Seed Trie with active product names
+const syncTrie = async () => {
+  try {
+    const products = await Product.findAll({ where: { is_active: true }, attributes: ['name'] });
+    for (const prod of products) {
+      productTrie.insert(prod.name);
+    }
+    console.log(`[Trie Autocomplete] Seeded Trie with ${products.length} product names.`);
+  } catch (err) {
+    console.error('[Trie Autocomplete] Failed to seed Trie:', err);
+  }
+};
+
+// Start Trie sync asynchronously
+syncTrie();
+
 // Helper to create slugs
 const slugify = (text) => {
   return text
@@ -107,11 +130,87 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /products/search - Semantic Search
+router.get('/search', async (req, res) => {
+  const { q } = req.query;
+  if (!q) {
+    return res.status(400).json({ message: 'Search query parameter (q) is required' });
+  }
+
+  try {
+    const products = await aiService.semanticSearch(q, 12);
+    return res.json(products);
+  } catch (err) {
+    console.error('Semantic search route error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// GET /products/autocomplete - Prefix Autocomplete suggestions via Trie
+router.get('/autocomplete', (req, res) => {
+  const { q } = req.query;
+  if (!q) {
+    return res.json([]);
+  }
+
+  try {
+    const suggestions = productTrie.searchPrefix(q);
+    return res.json(suggestions);
+  } catch (err) {
+    console.error('Trie autocomplete route error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// GET /products/recommendations/collaborative - Collaborative filtering KNN
+router.get('/recommendations/collaborative', async (req, res) => {
+  let userId = null;
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    const jwt = require('jsonwebtoken');
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      userId = decoded.id;
+    } catch (e) {
+      // Ignore token decode errors
+    }
+  }
+
+  try {
+    const { getCollaborativeRecommendations } = require('../algorithms/CollaborativeFiltering');
+    const products = await getCollaborativeRecommendations(userId, 4);
+    return res.json(products);
+  } catch (err) {
+    console.error('Collaborative filtering route error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// GET /products/:id/recommendations - Similarity Recommendations
+router.get('/:id/recommendations', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const recommendations = await aiService.getVectorRecommendations(id, 4);
+    return res.json(recommendations);
+  } catch (err) {
+    console.error('Vector recommendations route error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // GET /products/:id - Public detail (by ID or Slug)
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
+  const cacheKey = `product:detail:${id}`;
 
   try {
+    // Check cache first
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
     const isId = !isNaN(id);
     const where = isId ? { id } : { slug: id };
 
@@ -137,6 +236,9 @@ router.get('/:id', async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
+
+    // Cache product detail (TTL: 1 Hour)
+    await redis.set(cacheKey, product, 3600);
 
     return res.json(product);
   } catch (err) {
@@ -238,6 +340,10 @@ router.post(
           { model: Category, as: 'category' }
         ]
       });
+
+      // Sync to vector index and update Trie in background
+      aiService.upsertProduct(createdProduct).catch(err => console.error('[AI Service] Creation sync error:', err));
+      productTrie.insert(createdProduct.name);
 
       return res.status(201).json(createdProduct);
     } catch (err) {
@@ -407,6 +513,16 @@ router.put(
         ]
       });
 
+      if (updatedProduct) {
+        // Evict detail caches
+        await redis.del(`product:detail:${id}`);
+        await redis.del(`product:detail:${updatedProduct.slug}`);
+        
+        // Sync to vector index and update Trie in background
+        aiService.upsertProduct(updatedProduct).catch(err => console.error('[AI Service] Update sync error:', err));
+        productTrie.insert(updatedProduct.name);
+      }
+
       return res.json(updatedProduct);
     } catch (err) {
       await transaction.rollback();
@@ -448,7 +564,16 @@ router.delete('/:id', auth, admin, async (req, res) => {
       }
     }
 
+    const slug = product.slug;
     await product.destroy();
+
+    // Evict Redis caches
+    await redis.del(`product:detail:${id}`);
+    await redis.del(`product:detail:${slug}`);
+
+    // Delete from vector index in background
+    aiService.deleteProduct(id).catch(err => console.error('[AI Service] Delete sync error:', err));
+
     return res.json({ message: 'Product deleted successfully' });
   } catch (err) {
     console.error('Delete product error:', err);

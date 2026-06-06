@@ -4,7 +4,8 @@ let client = null;
 let isConnected = false;
 
 // Memory fallback store for when Redis is unavailable
-const fallbackStore = new Map();
+const LRUCache = require('../algorithms/LRUCache');
+const fallbackStore = new LRUCache(50); // Bounded to 50 hot items
 const fallbackExpiries = new Map(); // key -> expiration timestamp
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
@@ -87,7 +88,7 @@ const set = async (key, value, ttlSeconds = null) => {
   }
 
   // Fallback to in-memory store
-  fallbackStore.set(key, jsonString);
+  fallbackStore.put(key, jsonString);
   if (ttlSeconds) {
     fallbackExpiries.set(key, Date.now() + (ttlSeconds * 1000));
   } else {

@@ -47,6 +47,7 @@ app.use('/addresses', addressesRouter);
 app.use('/orders', ordersRouter);
 app.use('/payments', paymentsRouter);
 app.use('/admin', adminRouter);
+app.use('/assistant', require('./routes/assistant'));
 app.use('/', require('./routes/reviews'));
 
 
@@ -79,7 +80,49 @@ const startServer = async () => {
     await sequelize.sync({ alter: true }); // Use alter: true to safely update schema in development
     console.log('Database synchronized successfully.');
 
-    // 3. Start listening
+    // 3. Start Pinecone Vector synchronization pipeline
+    const aiService = require('./services/aiService');
+    aiService.syncAllProducts().catch(err => console.error('[AI Service] Startup sync error:', err));
+
+    // 4. Start Heap-based low stock background checking alerts
+    const runStockHeapCheck = async () => {
+      try {
+        const MinHeap = require('./algorithms/MinHeap');
+        const { ProductVariant, Product } = require('./config/db');
+        const variants = await ProductVariant.findAll({
+          include: [{ model: Product, attributes: ['name'] }]
+        });
+
+        const heap = new MinHeap((a, b) => a.stock_qty - b.stock_qty);
+        for (const v of variants) {
+          heap.insert(v);
+        }
+
+        const lowStockList = [];
+        while (heap.size() > 0) {
+          const item = heap.extractMin();
+          if (item.stock_qty < 10) {
+            lowStockList.push(`- ${item.Product?.name || 'Unknown Product'} (${item.size || ''} ${item.color || ''}) - Qty: ${item.stock_qty} (SKU: ${item.sku || 'N/A'})`);
+          } else {
+            break;
+          }
+        }
+
+        if (lowStockList.length > 0) {
+          console.warn(`[Inventory Alert Cron] low stock variants detected:\n${lowStockList.join('\n')}`);
+        } else {
+          console.log('[Inventory Alert Cron] All inventory levels within normal bounds.');
+        }
+      } catch (err) {
+        console.error('[Inventory Alert Cron] Heap check error:', err);
+      }
+    };
+
+    // Run stock alert check once on boot, then every 1 hour
+    runStockHeapCheck();
+    setInterval(runStockHeapCheck, 60 * 60 * 1000);
+
+    // 5. Start listening
     app.listen(PORT, () => {
       console.log(`Server listening on port ${PORT}`);
     });

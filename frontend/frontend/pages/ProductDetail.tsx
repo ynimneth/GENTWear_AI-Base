@@ -5,7 +5,7 @@ import {
   ChevronLeft, ShoppingCart, ShieldCheck, Truck, RotateCcw, 
   Plus, Minus, RefreshCw, AlertCircle, Check, Heart,
   Star, MessageSquare, ThumbsUp, ShieldAlert, Award, User as UserIcon,
-  Loader2
+  Loader2, Sparkles
 } from 'lucide-react';
 import { productService } from '../services/productService';
 import { Product, ProductVariant, ProductImage } from '../types';
@@ -48,6 +48,27 @@ const ProductDetail: React.FC = () => {
       full_name: string;
     };
   }
+
+  // Similar Products Recommendations States
+  const [recommendations, setRecommendations] = useState<Product[]>([]);
+  const [recsLoading, setRecsLoading] = useState(true);
+
+  // Fetch similar product recommendations
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      if (!id) return;
+      setRecsLoading(true);
+      try {
+        const { data } = await api.get(`/products/${id}/recommendations`);
+        setRecommendations(data || []);
+      } catch (err) {
+        console.error('Failed to load vector similarity recommendations:', err);
+      } finally {
+        setRecsLoading(false);
+      }
+    };
+    fetchRecommendations();
+  }, [id]);
 
   // Reviews States
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -622,6 +643,49 @@ const ProductDetail: React.FC = () => {
           </div>
 
         </div>
+
+        {/* Similarity Recommendations Shelf */}
+        {!recsLoading && recommendations.length > 0 && (
+          <div className="mt-20 pt-12 border-t border-slate-850/60 text-left space-y-8 animate-fadeIn">
+            <div>
+              <span className="text-xs text-indigo-400 font-extrabold uppercase tracking-widest flex items-center gap-1">
+                <Sparkles size={11} className="animate-pulse" /> Curated Selection
+              </span>
+              <h2 className="text-2xl font-black uppercase tracking-wider text-slate-100 mt-1">You May Also Like</h2>
+              <p className="text-slate-500 text-xs mt-1">Discover items styled similarly based on semantic description matching</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+              {recommendations.map((prod) => {
+                const primaryImg = prod.images?.find(img => img.is_primary) || prod.images?.[0];
+                return (
+                  <div
+                    key={prod.id}
+                    onClick={() => { navigate(`/products/${prod.id}`); window.scrollTo(0, 0); }}
+                    className="bg-slate-900/40 backdrop-blur-md border border-slate-850 hover:border-slate-700 rounded-2xl overflow-hidden shadow-lg group cursor-pointer flex flex-col h-full transition-all duration-300 hover:-translate-y-1.5"
+                  >
+                    <div className="relative aspect-[4/5] bg-slate-950 overflow-hidden w-full">
+                      <img
+                        src={getImageUrl(primaryImg?.url)}
+                        alt={prod.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                      />
+                    </div>
+                    <div className="p-4 flex flex-col flex-1">
+                      <h3 className="text-sm font-bold text-slate-200 line-clamp-1 group-hover:text-indigo-400 transition-colors">
+                        {prod.name}
+                      </h3>
+                      <div className="mt-auto pt-2 border-t border-slate-850/40 flex justify-between items-center text-xs">
+                        <span className="font-extrabold text-slate-100">${parseFloat(prod.price as any).toFixed(2)}</span>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">View Item →</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Customer Reviews Section */}
         <div className="mt-20 pt-12 border-t border-slate-850/60 text-left space-y-10">

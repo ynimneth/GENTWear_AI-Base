@@ -19,6 +19,7 @@ import AdminCustomers from '../pages/admin/AdminCustomers';
 import AdminReviews from '../pages/admin/AdminReviews';
 import AdminLayout from '../components/admin/AdminLayout';
 import CartDrawer from '../components/CartDrawer';
+import AIAssistantWidget from '../components/AIAssistantWidget';
 import { useCartStore } from '../store/cartStore';
 import { useWishlistStore } from '../store/wishlistStore';
 import { categoryService } from '../services/categoryService';
@@ -651,6 +652,9 @@ function App() {
           </Routes>
         </main>
         
+        {/* Global Floating AI assistant widget */}
+        <AIAssistantWidget />
+
         {/* Global Cart Slide-in Drawer */}
         <CartDrawer />
 
