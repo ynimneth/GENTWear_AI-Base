@@ -10,6 +10,7 @@ import ProductDetail from '../pages/ProductDetail';
 import AdminProducts from '../pages/AdminProducts';
 import AdminCategories from '../pages/AdminCategories';
 import Wishlist from '../pages/Wishlist';
+import Checkout from '../pages/Checkout';
 import CartDrawer from '../components/CartDrawer';
 import { useCartStore } from '../store/cartStore';
 import { useWishlistStore } from '../store/wishlistStore';
@@ -536,6 +537,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ProfileView />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/checkout"
+              element={
+                <ProtectedRoute>
+                  <Checkout />
                 </ProtectedRoute>
               }
             />

@@ -21,6 +21,9 @@ const ProductVariant = require('../models/productVariant')(sequelize);
 const ProductImage = require('../models/productImage')(sequelize);
 const CartItem = require('../models/cartItem')(sequelize);
 const WishlistItem = require('../models/wishlistItem')(sequelize);
+const Address = require('../models/address')(sequelize);
+const Order = require('../models/order')(sequelize);
+const OrderItem = require('../models/orderItem')(sequelize);
 
 // Associations
 // Category self-reference
@@ -59,6 +62,26 @@ WishlistItem.belongsTo(User, { foreignKey: 'user_id' });
 Product.hasMany(WishlistItem, { foreignKey: 'product_id', onDelete: 'CASCADE' });
 WishlistItem.belongsTo(Product, { foreignKey: 'product_id' });
 
+// User & Address
+User.hasMany(Address, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+Address.belongsTo(User, { foreignKey: 'user_id' });
+
+// User & Order
+User.hasMany(Order, { foreignKey: 'user_id', onDelete: 'SET NULL' });
+Order.belongsTo(User, { foreignKey: 'user_id' });
+
+// Order & OrderItem
+Order.hasMany(OrderItem, { as: 'items', foreignKey: 'order_id', onDelete: 'CASCADE' });
+OrderItem.belongsTo(Order, { foreignKey: 'order_id' });
+
+// Product & OrderItem
+Product.hasMany(OrderItem, { foreignKey: 'product_id', onDelete: 'SET NULL' });
+OrderItem.belongsTo(Product, { foreignKey: 'product_id' });
+
+// ProductVariant & OrderItem
+ProductVariant.hasMany(OrderItem, { foreignKey: 'variant_id', onDelete: 'SET NULL' });
+OrderItem.belongsTo(ProductVariant, { as: 'variant', foreignKey: 'variant_id' });
+
 const connectDB = async () => {
   try {
     await sequelize.authenticate();
@@ -78,6 +101,9 @@ module.exports = {
   ProductVariant, 
   ProductImage,
   CartItem,
-  WishlistItem
+  WishlistItem,
+  Address,
+  Order,
+  OrderItem
 };
 

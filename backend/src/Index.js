@@ -15,7 +15,13 @@ app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true
 }));           // Enables Cross-Origin Resource Sharing
-app.use(express.json());   // Parses incoming JSON request bodies
+app.use(express.json({
+  verify: (req, res, buf) => {
+    if (req.originalUrl.startsWith('/payments/webhook')) {
+      req.rawBody = buf;
+    }
+  }
+}));   // Parses incoming JSON request bodies and captures raw body for Stripe signature verification
 app.use(cookieParser());   // Parses cookies attached to client requests
 
 // Serve static files for uploaded product images
@@ -27,12 +33,18 @@ const categoriesRouter = require('./routes/categories');
 const productsRouter = require('./routes/products');
 const cartRouter = require('./routes/cart');
 const wishlistRouter = require('./routes/wishlist');
+const addressesRouter = require('./routes/addresses');
+const ordersRouter = require('./routes/orders');
+const paymentsRouter = require('./routes/payments');
 
 app.use('/auth', authRouter);
 app.use('/categories', categoriesRouter);
 app.use('/products', productsRouter);
 app.use('/cart', cartRouter);
 app.use('/wishlist', wishlistRouter);
+app.use('/addresses', addressesRouter);
+app.use('/orders', ordersRouter);
+app.use('/payments', paymentsRouter);
 
 
 // Test Protected / Admin Routes

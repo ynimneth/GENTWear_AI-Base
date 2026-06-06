@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShoppingBag, Plus, Minus, Trash2, ShieldCheck, Truck } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
@@ -11,6 +12,7 @@ const getImageUrl = (url?: string) => {
 };
 
 const CartDrawer: React.FC = () => {
+  const navigate = useNavigate();
   const { 
     cartItems, 
     isOpen, 
@@ -262,7 +264,8 @@ const CartDrawer: React.FC = () => {
                 <div className="space-y-3">
                   <button
                     onClick={() => {
-                      toast.success('Proceeding to Checkout...');
+                      setIsOpen(false);
+                      navigate('/checkout');
                     }}
                     className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-600/15 cursor-pointer active:scale-98"
                   >
