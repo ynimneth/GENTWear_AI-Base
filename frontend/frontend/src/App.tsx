@@ -16,6 +16,7 @@ import AdminOrders from '../pages/admin/AdminOrders';
 import AdminPromotions from '../pages/admin/AdminPromotions';
 import AdminBanners from '../pages/admin/AdminBanners';
 import AdminCustomers from '../pages/admin/AdminCustomers';
+import AdminReviews from '../pages/admin/AdminReviews';
 import AdminLayout from '../components/admin/AdminLayout';
 import CartDrawer from '../components/CartDrawer';
 import { useCartStore } from '../store/cartStore';
@@ -629,6 +630,17 @@ function App() {
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminLayout>
                     <AdminCustomers />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/reviews"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout>
+                    <AdminReviews />
                   </AdminLayout>
                 </ProtectedRoute>
               }

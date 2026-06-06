@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { 
-  Order, OrderItem, Product, ProductVariant, User, Banner, Promotion, sequelize 
+  Order, OrderItem, Product, ProductVariant, User, Banner, Promotion, Review, sequelize 
 } = require('../config/db');
 const { upload, handleUpload } = require('../services/uploadService');
 const auth = require('../middleware/auth');
@@ -550,6 +550,95 @@ router.delete('/promotions/:id', async (req, res) => {
     return res.json({ message: 'Promotion deleted successfully' });
   } catch (err) {
     console.error('Delete promotion error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// ----------------------------------------------------
+// 6. REVIEW MODERATION
+// ----------------------------------------------------
+
+// GET /admin/reviews/pending - List all pending reviews
+router.get('/reviews/pending', async (req, res) => {
+  try {
+    const reviews = await Review.findAll({
+      where: { is_approved: false },
+      include: [
+        {
+          model: User,
+          attributes: ['id', 'full_name', 'email']
+        },
+        {
+          model: Product,
+          attributes: ['id', 'name', 'price']
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+    return res.json(reviews);
+  } catch (err) {
+    console.error('Fetch pending reviews error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// PUT /admin/reviews/:id/approve - Approve a review
+router.put('/reviews/:id/approve', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const review = await Review.findByPk(id);
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    review.is_approved = true;
+    await review.save();
+
+    return res.json({ message: 'Review approved successfully', review });
+  } catch (err) {
+    console.error('Approve review error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// POST /admin/reviews/:id/reply - Post official admin reply
+router.post('/reviews/:id/reply', async (req, res) => {
+  const { id } = req.params;
+  const { admin_reply } = req.body;
+
+  if (admin_reply === undefined) {
+    return res.status(400).json({ message: 'admin_reply is required' });
+  }
+
+  try {
+    const review = await Review.findByPk(id);
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    review.admin_reply = admin_reply.trim() || null;
+    await review.save();
+
+    return res.json({ message: 'Admin reply saved successfully', review });
+  } catch (err) {
+    console.error('Admin reply error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// DELETE /admin/reviews/:id - Reject / Delete a review
+router.delete('/reviews/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const deleted = await Review.destroy({ where: { id } });
+    if (!deleted) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+    return res.json({ message: 'Review rejected and deleted' });
+  } catch (err) {
+    console.error('Delete review error:', err);
     return res.status(500).json({ message: 'Internal server error' });
   }
 });

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, ShoppingBag, FolderOpen, Tag, Percent, Image, 
-  Users, Home, Menu, X, ShieldAlert, LogOut 
+  Users, Home, Menu, X, ShieldAlert, LogOut, MessageSquare 
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
@@ -19,6 +19,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/admin/categories', label: 'Categories', icon: FolderOpen },
     { path: '/admin/promotions', label: 'Promotions', icon: Percent },
     { path: '/admin/banners', label: 'Banners', icon: Image },
+    { path: '/admin/reviews', label: 'Reviews', icon: MessageSquare },
     { path: '/admin/customers', label: 'Customers', icon: Users }
   ];
 

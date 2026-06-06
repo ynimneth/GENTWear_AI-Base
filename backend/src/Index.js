@@ -47,6 +47,7 @@ app.use('/addresses', addressesRouter);
 app.use('/orders', ordersRouter);
 app.use('/payments', paymentsRouter);
 app.use('/admin', adminRouter);
+app.use('/', require('./routes/reviews'));
 
 
 // Test Protected / Admin Routes
