@@ -72,7 +72,7 @@ router.get('/analytics/sales', async (req, res) => {
       attributes: [
         'product_id',
         [sequelize.fn('SUM', sequelize.col('quantity')), 'units_sold'],
-        [sequelize.fn('SUM', sequelize.literal('quantity * price')), 'revenue']
+        [sequelize.fn('SUM', sequelize.literal('"OrderItem"."quantity" * "OrderItem"."price"')), 'revenue']
       ],
       include: [{
         model: Product,
@@ -98,6 +98,7 @@ router.get('/analytics/sales', async (req, res) => {
       where: { stock_qty: { [Op.lt]: 10 } },
       include: [{
         model: Product,
+        as: 'product',
         attributes: ['name']
       }],
       limit: 10
@@ -649,7 +650,7 @@ router.get('/inventory/low-stock-heap', async (req, res) => {
     const MinHeap = require('../algorithms/MinHeap');
     
     const variants = await ProductVariant.findAll({
-      include: [{ model: Product, attributes: ['name'] }]
+      include: [{ model: Product, as: 'product', attributes: ['name'] }]
     });
 
     const heap = new MinHeap((a, b) => a.stock_qty - b.stock_qty);

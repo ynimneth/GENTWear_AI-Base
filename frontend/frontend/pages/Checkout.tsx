@@ -12,12 +12,314 @@ import { useAuthStore } from '../store/authStore';
 import { toast } from 'react-hot-toast';
 
 // Stripe Elements Imports
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe } from '@stripe/stripe-js/pure';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import confetti from 'canvas-confetti';
 
-// Stripe test publishable key placeholder
-const stripePromise = loadStripe('pk_test_51P00000000000000000000000000000000000000000000000000000000000000000000000000000000');
+// Stripe publishable key configuration
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51P00000000000000000000000000000000000000000000000000000000000000000000000000000000';
+
+let stripePromise: any = null;
+const getStripePromise = () => {
+  if (!stripePromise && !stripeKey.startsWith('pk_test_51P0000')) {
+    try {
+      // Disable telemetry/fraud detection requests to avoid ERR_BLOCKED_BY_CLIENT
+      loadStripe.setLoadParameters({ advancedFraudSignals: false });
+    } catch (e) {
+      console.warn('Stripe load parameters warning:', e);
+    }
+    stripePromise = loadStripe(stripeKey);
+  }
+  return stripePromise;
+};
+
+// Premium Mock Payment Form for Stripe Sandbox Mode
+const MockPaymentForm: React.FC<{
+  clientSecret: string;
+  orderId: number;
+  total: number;
+  onSuccess: () => void;
+  onBack: () => void;
+}> = ({ clientSecret, orderId, total, onSuccess, onBack }) => {
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardName, setCardName] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvc, setCardCvc] = useState('');
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 16) value = value.slice(0, 16);
+    const formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+    setCardNumber(formatted);
+  };
+
+  const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 4) value = value.slice(0, 4);
+    if (value.length > 2) {
+      setCardExpiry(`${value.slice(0, 2)}/${value.slice(2)}`);
+    } else {
+      setCardExpiry(value);
+    }
+  };
+
+  const handleCvcChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 4) {
+      setCardCvc(value);
+    }
+  };
+
+  const getCardType = (num: string) => {
+    const cleanNum = num.replace(/\s+/g, '');
+    if (cleanNum.startsWith('4')) return 'visa';
+    if (cleanNum.startsWith('5')) return 'mastercard';
+    if (cleanNum.startsWith('3')) return 'amex';
+    return 'generic';
+  };
+
+  const cardType = getCardType(cardNumber);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!cardNumber || cardNumber.replace(/\s+/g, '').length < 16) {
+      toast.error('Please enter a valid 16-digit card number');
+      return;
+    }
+    if (!cardName) {
+      toast.error('Please enter cardholder name');
+      return;
+    }
+    if (!cardExpiry || cardExpiry.length < 5) {
+      toast.error('Please enter expiry date (MM/YY)');
+      return;
+    }
+    if (!cardCvc || cardCvc.length < 3) {
+      toast.error('Please enter CVC code');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      console.log('[Payment Sandbox] Simulating mock checkout processing...');
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+      
+      try {
+        await fetch('http://localhost:5000/payments/webhook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'payment_intent.succeeded',
+            data: {
+              object: {
+                id: clientSecret.split('_secret_')[0],
+                amount: Math.round(total * 100),
+                status: 'succeeded'
+              }
+            }
+          })
+        });
+      } catch (webhookErr) {
+        console.warn('[Payments Webhook Sandbox] Mock webhook trigger warning:', webhookErr);
+      }
+
+      setIsProcessing(false);
+      onSuccess();
+    } catch (err: any) {
+      toast.error(err.message || 'An error occurred during sandbox payment');
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* 3D Visual Card Preview */}
+      <div className="card-perspective w-full max-w-[340px] h-[210px] mx-auto mb-8 cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
+        <div className={`card-inner w-full h-full relative rounded-2xl ${isFlipped ? 'is-flipped' : ''}`}>
+          {/* Card Front */}
+          <div className="card-front absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between shadow-2xl overflow-hidden">
+            {/* Holographic glowing orb background pattern */}
+            <div className="absolute -top-12 -right-12 w-36 h-36 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-purple-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div className="flex justify-between items-start">
+              {/* Chip and contact-less icon */}
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-7 bg-gradient-to-r from-amber-400 to-amber-200 rounded-md opacity-85 relative overflow-hidden flex flex-wrap p-1">
+                  <div className="w-full h-[1px] bg-slate-900/15"></div>
+                  <div className="w-full h-[1px] bg-slate-900/15"></div>
+                  <div className="w-1/2 h-full border-r border-slate-900/15"></div>
+                </div>
+                <div className="text-slate-500 rotate-90 scale-90">
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.66 0 3 1.34 3 3v1.71c.77.13 1.4.66 1.66 1.39l.24.64z"/>
+                  </svg>
+                </div>
+              </div>
+
+              {/* Brand Logo */}
+              <div className="font-black tracking-widest text-sm uppercase italic bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent flex flex-col items-end">
+                {cardType === 'visa' && <span className="text-blue-400 font-extrabold not-italic text-lg">VISA</span>}
+                {cardType === 'mastercard' && (
+                  <div className="flex items-center -space-x-2">
+                    <div className="w-5 h-5 rounded-full bg-rose-500 opacity-90"></div>
+                    <div className="w-5 h-5 rounded-full bg-amber-500 opacity-90"></div>
+                  </div>
+                )}
+                {cardType === 'amex' && <span className="text-cyan-400 font-extrabold not-italic text-sm">AMEX</span>}
+                {cardType === 'generic' && <span className="text-[10px] tracking-widest font-semibold text-slate-400">GENTWEAR</span>}
+              </div>
+            </div>
+
+            {/* Card Number */}
+            <div className="text-center py-2">
+              <span className="font-mono text-lg tracking-[0.2em] text-slate-100 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
+                {cardNumber || '•••• •••• •••• ••••'}
+              </span>
+            </div>
+
+            <div className="flex justify-between items-end">
+              <div className="flex flex-col text-left">
+                <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Cardholder Name</span>
+                <span className="font-mono text-xs tracking-wider text-slate-200 uppercase truncate max-w-[170px]">
+                  {cardName || 'JOHN DOE'}
+                </span>
+              </div>
+              <div className="flex flex-col text-right">
+                <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Expires</span>
+                <span className="font-mono text-xs tracking-wider text-slate-200">
+                  {cardExpiry || 'MM/YY'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card Back */}
+          <div className="card-back absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 border border-slate-800 rounded-2xl py-6 flex flex-col justify-between shadow-2xl overflow-hidden">
+            <div className="w-full h-11 bg-slate-950 mt-1"></div>
+            
+            <div className="px-6 flex flex-col gap-2">
+              <span className="text-[8px] uppercase tracking-widest text-slate-500 text-left font-bold pl-1">Authorized Signature</span>
+              <div className="w-full h-9 bg-slate-100/90 rounded-md flex items-center justify-between px-3 overflow-hidden">
+                <div className="w-3/4 h-full bg-[linear-gradient(45deg,rgba(0,0,0,0.02)_25%,transparent_25%,transparent_50%,rgba(0,0,0,0.02)_50%,rgba(0,0,0,0.02)_75%,transparent_75%,transparent)] bg-[size:10px_10px] flex items-center">
+                  <span className="font-serif italic text-slate-700 text-sm opacity-60 tracking-wider truncate max-w-[120px]">
+                    {cardName}
+                  </span>
+                </div>
+                <span className="font-mono text-xs text-slate-950 font-bold italic tracking-wider">
+                  {cardCvc || '•••'}
+                </span>
+              </div>
+            </div>
+
+            <div className="px-6 text-[7px] text-slate-500 leading-normal text-left">
+              This is a development sandbox credit card mockup. Payments simulated using this card are for testing purposes only and do not charge real financial institutions.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Input Fields */}
+      <div className="bg-slate-950/60 border border-slate-850 p-6 rounded-2xl space-y-4">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sandbox Payment (No Real Charge)</span>
+          <span className="text-xs text-indigo-400 font-bold flex items-center gap-1">
+            <ShieldCheck size={14} /> Sandbox Mode
+          </span>
+        </div>
+
+        <div>
+          <label className="text-xs text-slate-400 font-bold block mb-1">Cardholder Name</label>
+          <input
+            type="text"
+            required
+            placeholder="John Doe"
+            value={cardName}
+            onFocus={() => setIsFlipped(false)}
+            onChange={(e) => setCardName(e.target.value)}
+            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 text-slate-100"
+          />
+        </div>
+
+        <div>
+          <label className="text-xs text-slate-400 font-bold block mb-1">Card Number</label>
+          <input
+            type="text"
+            required
+            placeholder="4111 1111 1111 1111"
+            value={cardNumber}
+            onFocus={() => setIsFlipped(false)}
+            onChange={handleCardNumberChange}
+            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 text-slate-100 font-mono tracking-widest"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs text-slate-400 font-bold block mb-1">Expiration Date</label>
+            <input
+              type="text"
+              required
+              placeholder="MM/YY"
+              value={cardExpiry}
+              onFocus={() => setIsFlipped(false)}
+              onChange={handleExpiryChange}
+              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 text-slate-100 font-mono"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-slate-400 font-bold block mb-1">CVC Code</label>
+            <input
+              type="password"
+              required
+              placeholder="•••"
+              value={cardCvc}
+              onFocus={() => setIsFlipped(true)}
+              onBlur={() => setIsFlipped(false)}
+              onChange={handleCvcChange}
+              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 text-slate-100 font-mono"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2.5 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/20 text-xs text-indigo-300">
+          <Info size={14} className="shrink-0 mt-0.5" />
+          <p>
+            <strong>Sandbox Active:</strong> You can enter any 16-digit card number and expiry details to proceed. We recommend using <code>4111 1111 1111 1111</code> (test Visa).
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={onBack}
+          disabled={isProcessing}
+          className="flex-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 font-bold py-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-98 disabled:opacity-50 text-sm"
+        >
+          <ArrowLeft size={16} /> Back
+        </button>
+        <button
+          type="submit"
+          disabled={isProcessing}
+          className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-600/15 cursor-pointer flex items-center justify-center gap-2 active:scale-98 disabled:opacity-50 text-sm"
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="animate-spin" size={16} /> Processing...
+            </>
+          ) : (
+            `Pay $${total.toFixed(2)}`
+          )}
+        </button>
+      </div>
+    </form>
+  );
+};
 
 // Sub-component for Payment Form to access Elements context
 const PaymentForm: React.FC<{
@@ -743,15 +1045,25 @@ const Checkout: React.FC = () => {
                     </p>
 
                     {clientSecret && (
-                      <Elements stripe={stripePromise}>
-                        <PaymentForm
+                      clientSecret.startsWith('pi_mock_') ? (
+                        <MockPaymentForm
                           clientSecret={clientSecret}
                           orderId={placedOrder?.id}
                           total={placedOrder ? parseFloat(placedOrder.total) : totalCost}
                           onSuccess={handlePaymentSuccess}
                           onBack={() => setStep(2)}
                         />
-                      </Elements>
+                      ) : (
+                        <Elements stripe={getStripePromise()}>
+                          <PaymentForm
+                            clientSecret={clientSecret}
+                            orderId={placedOrder?.id}
+                            total={placedOrder ? parseFloat(placedOrder.total) : totalCost}
+                            onSuccess={handlePaymentSuccess}
+                            onBack={() => setStep(2)}
+                          />
+                        </Elements>
+                      )
                     )}
                   </div>
                 </motion.div>
