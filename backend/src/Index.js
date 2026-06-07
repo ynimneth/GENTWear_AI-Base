@@ -90,8 +90,12 @@ const startServer = async () => {
         const MinHeap = require('./algorithms/MinHeap');
         const { ProductVariant, Product } = require('./config/db');
         const variants = await ProductVariant.findAll({
-          include: [{ model: Product, attributes: ['name'] }]
-        });
+  include: [{
+    model: Product,
+    as: 'product',
+    attributes: ['name']
+  }]
+});
 
         const heap = new MinHeap((a, b) => a.stock_qty - b.stock_qty);
         for (const v of variants) {
@@ -132,4 +136,4 @@ const startServer = async () => {
   }
 };
 
-startServer();
+startServer();
