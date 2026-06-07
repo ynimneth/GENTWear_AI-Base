@@ -244,6 +244,22 @@ const Navbar = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<number | null>(null);
+  const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
+
+  // Close admin dropdown when clicking outside
+  useEffect(() => {
+    if (!adminDropdownOpen) return;
+
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.admin-dropdown-container')) {
+        setAdminDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, [adminDropdownOpen]);
 
   const { toggleDrawer, cartItems } = useCartStore() as any;
   const { wishlistItems } = useWishlistStore() as any;
@@ -350,21 +366,34 @@ const Navbar = () => {
           {user ? (
             <>
               {user.role === 'admin' && (
-                <div className="relative group py-2">
-                  <button className="text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 hover:bg-indigo-500/15 transition-all cursor-pointer">
-                    <Shield size={12} /> Admin Area <ChevronDown size={12} />
+                <div className="relative py-2 admin-dropdown-container">
+                  <button 
+                    onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
+                    className="text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 hover:bg-indigo-500/15 transition-all cursor-pointer"
+                  >
+                    <Shield size={12} /> Admin Area <ChevronDown size={12} className={`transition-transform duration-200 ${adminDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
-                  <div className="absolute right-0 top-full mt-1.5 w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-2 flex flex-col gap-1 z-20">
-                    <Link to="/admin" className="text-xs font-bold text-slate-300 hover:text-indigo-400 p-2.5 rounded-lg hover:bg-slate-850 transition-colors flex items-center gap-2">
-                      <Shield size={12} /> Control Center
-                    </Link>
-                    <Link to="/admin/products" className="text-xs font-bold text-slate-300 hover:text-indigo-400 p-2.5 rounded-lg hover:bg-slate-850 transition-colors flex items-center gap-2">
-                      <ShoppingBag size={12} /> Manage Products
-                    </Link>
-                    <Link to="/admin/categories" className="text-xs font-bold text-slate-300 hover:text-indigo-400 p-2.5 rounded-lg hover:bg-slate-850 transition-colors flex items-center gap-2">
-                      <FolderOpen size={12} /> Category Builder
-                    </Link>
-                  </div>
+                  <AnimatePresence>
+                    {adminDropdownOpen && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 8 }}
+                        transition={{ duration: 0.15, ease: 'easeOut' }}
+                        className="absolute right-0 top-full mt-1.5 w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-2 flex flex-col gap-1 z-20"
+                      >
+                        <Link to="/admin" onClick={() => setAdminDropdownOpen(false)} className="text-xs font-bold text-slate-300 hover:text-indigo-400 p-2.5 rounded-lg hover:bg-slate-850 transition-colors flex items-center gap-2">
+                          <Shield size={12} /> Control Center
+                        </Link>
+                        <Link to="/admin/products" onClick={() => setAdminDropdownOpen(false)} className="text-xs font-bold text-slate-300 hover:text-indigo-400 p-2.5 rounded-lg hover:bg-slate-850 transition-colors flex items-center gap-2">
+                          <ShoppingBag size={12} /> Manage Products
+                        </Link>
+                        <Link to="/admin/categories" onClick={() => setAdminDropdownOpen(false)} className="text-xs font-bold text-slate-300 hover:text-indigo-400 p-2.5 rounded-lg hover:bg-slate-850 transition-colors flex items-center gap-2">
+                          <FolderOpen size={12} /> Category Builder
+                        </Link>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
               <Link to="/profile" className="text-slate-300 hover:text-white transition-colors" title="My Profile">
