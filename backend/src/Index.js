@@ -5,6 +5,19 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { connectDB, sequelize } = require('./config/db');
+const { pc } = require('./config/pinecone');
+
+async function testPinecone() {
+  try {
+    const indexes = await pc.listIndexes();
+    console.log('Pinecone connected. Indexes:', indexes);
+  } catch (err) {
+    console.error('Pinecone connection test failed:', err);
+  }
+}
+
+testPinecone();
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;

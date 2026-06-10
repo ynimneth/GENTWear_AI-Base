@@ -13,6 +13,8 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@langchain/openai": "^1.4.7",
     "@pinecone-database/pinecone": "^7.2.0",
     "@sendgrid/mail": "^8.1.6",
     "bcryptjs": "^3.0.3",
@@ -26,7 +28,7 @@
     "langchain": "^1.4.4",
     "multer": "^2.1.1",
     "nodemailer": "^8.0.10",
-    "openai": "^6.41.0",
+    "openai": "^6.42.0",
     "pg": "^8.21.0",
     "pg-hstore": "^2.3.4",
     "redis": "^6.0.0",

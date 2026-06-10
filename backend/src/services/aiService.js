@@ -1,5 +1,5 @@
 const { Pinecone } = require('@pinecone-database/pinecone');
-const { OpenAI } = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { RunnableSequence, RunnableLambda } = require('@langchain/core/runnables');
 const path = require('path');
 const { Op } = require('sequelize');
@@ -7,18 +7,30 @@ const { Op } = require('sequelize');
 // Load environment variables
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const isOpenAIValid = process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.includes('...');
+const isGeminiValid =
+  process.env.GEMINI_API_KEY &&
+  process.env.GEMINI_API_KEY.length > 20;
 const isPineconeValid = process.env.PINECONE_API_KEY && !process.env.PINECONE_API_KEY.includes('...');
-const isSandboxMode = !isOpenAIValid || !isPineconeValid;
+const isSandboxMode = !isGeminiValid || !isPineconeValid;
 
 if (isSandboxMode) {
   console.warn('[AI Service] Credentials missing or placeholders detected. Activating AI Sandbox Mode.');
 } else {
-  console.log('[AI Service] Initializing production OpenAI and Pinecone integrations.');
+  console.log('[AI Service] Initializing production Gemini and Pinecone integrations.');
 }
 
 const pc = isSandboxMode ? null : new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
-const openai = isSandboxMode ? null : new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const genAI = isSandboxMode
+  ? null
+  : new GoogleGenerativeAI(
+      process.env.GEMINI_API_KEY
+    );
+
+const geminiModel = genAI
+  ? genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash'
+    })
+  : null;
 const indexName = 'gentwear-products';
 let pineconeIndex = null;
 
@@ -54,15 +66,16 @@ async function getEmbedding(text) {
     return vector.map(v => v / normSqrt);
   }
 
-  // Real OpenAI call
+  // Real Gemini call
   try {
-    const response = await openai.embeddings.create({
-      model: 'text-embedding-3-small',
-      input: text
+    const embedModel = genAI.getGenerativeModel({ model: 'gemini-embedding-2' });
+    const result = await embedModel.embedContent({
+      content: { parts: [{ text: text }] },
+      outputDimensionality: 1536
     });
-    return response.data[0].embedding;
+    return result.embedding.values;
   } catch (err) {
-    console.error('[AI Service] OpenAI embedding generation error:', err);
+    console.error('[AI Service] Gemini embedding generation error:', err);
     throw err;
   }
 }
@@ -330,47 +343,67 @@ const retrieveContext = new RunnableLambda({
       include: [{ model: ProductImage, as: 'images', attributes: ['url', 'is_primary'] }]
     });
     
-    return { query, products, history };
+    // Retrieve relevant store policies, FAQs, product guides, or admin rules
+    const { retrieveKnowledge } = require('../rag/knowledgeRetriever');
+    const knowledge = await retrieveKnowledge(query, 2);
+    
+    return { query, products, knowledge, history };
   }
 });
 
 const callLLM = new RunnableLambda({
   func: async (input) => {
-    const { query, products, history } = input;
+    const { query, products, knowledge, history } = input;
     let answer = '';
 
     if (isSandboxMode) {
-      if (products.length > 0) {
+      if (knowledge && knowledge.length > 0) {
+        // Beautiful formatting of the mock response using the matched knowledge section content
+        const topMatch = knowledge[0];
+        answer = `${topMatch.content}\n\n*(Note: This details our store guidelines for "${topMatch.title}" from ${topMatch.docTitle}.)*`;
+      } else if (products.length > 0) {
         answer = `I curated a few options for you from our collection:\n\n` +
           products.map(p => `- **${p.name}** ($${p.price}): ${p.description}`).join('\n') +
           `\n\nHow do these styles look? Let me know if you would like styling tips or help with sizing!`;
       } else {
-        answer = `Hello! I am your GENTWear AI Shopping Assistant. I couldn't find matches for your exact request. Feel free to ask about our blazers, shirts, trousers, or suits!`;
+        answer = `Hello! I am your GENTWear AI Shopping Assistant. How can I help you today? Feel free to ask about our premium shirts, blazers, trousers, or suits, or query our store policies and FAQs!`;
       }
     } else {
-      const context = products.map(p => `- ${p.name} ($${p.price}): ${p.description}`).join('\n');
-      const systemPrompt = `You are GENTWear's premium AI Shopping Assistant. Your goal is to guide clients on products, sizing, and styling.
+      const productContext = products.map(p => `- ${p.name} ($${p.price}): ${p.description}`).join('\n');
+      const knowledgeContext = knowledge.map(k => `[From ${k.docTitle} - Section: ${k.title}]:\n${k.content}`).join('\n\n');
+      
+      const systemPrompt = `You are GENTWear's premium AI Shopping Assistant. Your goal is to guide clients on products, sizing, styling, returns, shipping, admin rules, and general store FAQs.
 Keep responses concise, elegant, and helpful. Use markdown.
 
-Relevant products:
-${context}`;
-      
-      const formattedMessages = [
-        { role: 'system', content: systemPrompt },
-        ...history,
-        { role: 'user', content: query }
-      ];
+Relevant products from our database:
+${productContext}
+
+Relevant store knowledge, policies, and FAQ sections:
+${knowledgeContext}
+
+Use the provided store knowledge and policies context to answer general questions (e.g. shipping, returns, payment security, user account management, or admin Heap cron details). Do not invent information not found in the context.`;
       
       try {
-        const chatCompletion = await openai.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: formattedMessages
-        });
-        answer = chatCompletion.choices[0].message.content;
+        const prompt = `
+${systemPrompt}
+
+Conversation:
+${history.map(h => `${h.role}: ${h.content}`).join('\n')}
+
+User:
+${query}
+`;
+
+        const result = await geminiModel.generateContent(prompt);
+        answer = result.response.text();
       } catch (chatErr) {
-        console.error('[AI Service] OpenAI Chat Completion error, using fallback:', chatErr);
-        answer = `I am currently experiencing higher latency, but here are the suited recommendations:\n\n` +
-          products.map(p => `- **${p.name}** ($${p.price}): ${p.description}`).join('\n');
+        console.error('[AI Service] Gemini Chat Completion error, using fallback:', chatErr);
+        if (knowledge && knowledge.length > 0) {
+          answer = `I am experiencing high latency, but here is the information from our store guidelines:\n\n${knowledge[0].content}`;
+        } else {
+          answer = `I am currently experiencing higher latency, but here are the suited recommendations:\n\n` +
+            products.map(p => `- **${p.name}** ($${p.price}): ${p.description}`).join('\n');
+        }
       }
     }
     
