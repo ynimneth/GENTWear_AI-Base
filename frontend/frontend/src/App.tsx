@@ -26,7 +26,7 @@ import { useWishlistStore } from '../store/wishlistStore';
 import { categoryService } from '../services/categoryService';
 import { 
   User as UserIcon, Shield, LogOut, RefreshCw, KeyRound, 
-  Menu, X, ChevronDown, ShoppingBag, FolderOpen, Heart 
+  Menu, X, ChevronDown, ShoppingBag, FolderOpen, Heart, Search 
 } from 'lucide-react';
 
 // Loader component during session re-hydration
@@ -61,45 +61,41 @@ const ProfileView = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      {/* Glow effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none"></div>
-
-      <div className="w-full max-w-xl bg-slate-900/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-8 shadow-2xl relative z-10">
-        <div className="flex items-center gap-4 border-b border-slate-800/60 pb-6 mb-6">
-          <div className="p-4 bg-indigo-600/10 text-indigo-400 rounded-2xl border border-indigo-500/20">
+    <div className="min-h-screen bg-neutral-50 text-neutral-800 flex flex-col items-center justify-center p-6 relative overflow-hidden select-none">
+      <div className="w-full max-w-xl bg-white border border-neutral-200/80 rounded-2xl p-8 shadow-lg relative z-10">
+        <div className="flex items-center gap-4 border-b border-neutral-100 pb-6 mb-6">
+          <div className="p-4 bg-neutral-100 text-neutral-800 rounded-2xl border border-neutral-200">
             <UserIcon size={32} />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-100">{user.full_name}</h1>
-            <p className="text-slate-400 text-sm">{user.email}</p>
+          <div className="text-left">
+            <h1 className="text-2xl font-bold text-neutral-900 font-sans">{user.full_name}</h1>
+            <p className="text-neutral-500 text-sm font-sans">{user.email}</p>
           </div>
-          <span className="ml-auto uppercase text-xs font-bold tracking-wider px-3 py-1.5 rounded-full bg-slate-850 border border-slate-700/60 text-slate-300">
+          <span className="ml-auto uppercase text-xs font-bold tracking-wider px-3 py-1.5 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-600 font-sans">
             {user.role}
           </span>
         </div>
 
         <div className="space-y-6">
           {/* Token display */}
-          <div className="bg-slate-950/60 border border-slate-850 p-4 rounded-xl">
+          <div className="bg-neutral-50 border border-neutral-200 p-4 rounded-xl text-left">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider flex items-center gap-1.5 font-sans">
                 <KeyRound size={14} /> In-Memory Access Token
               </span>
-              <span className="text-[10px] text-green-400 font-semibold px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20">
+              <span className="text-[10px] text-emerald-600 font-bold px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 font-sans">
                 Secure
               </span>
             </div>
-            <p className="font-mono text-xs text-slate-400 break-all bg-slate-900/80 p-2.5 rounded border border-slate-800/40 max-h-16 overflow-y-auto">
+            <p className="font-mono text-xs text-neutral-550 break-all bg-white p-2.5 rounded border border-neutral-200/60 max-h-16 overflow-y-auto">
               {accessToken}
             </p>
           </div>
 
           {/* Account status */}
-          <div className="flex justify-between items-center p-4 bg-slate-950/40 border border-slate-850 rounded-xl">
-            <span className="text-sm text-slate-300">Email Verification Status</span>
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-500/10 border border-green-500/30 text-green-400">
+          <div className="flex justify-between items-center p-4 bg-neutral-50 border border-neutral-200 rounded-xl font-sans">
+            <span className="text-sm text-neutral-600 font-medium">Email Verification Status</span>
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600">
               Verified
             </span>
           </div>
@@ -108,37 +104,37 @@ const ProfileView = () => {
           {user.role === 'admin' ? (
             <Link 
               to="/admin" 
-              className="flex items-center justify-between p-4 bg-indigo-600/10 hover:bg-indigo-600/15 border border-indigo-500/20 rounded-xl transition-all duration-300 group cursor-pointer"
+              className="flex items-center justify-between p-4 bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 rounded-xl transition-all duration-350 group cursor-pointer font-sans"
             >
-              <div className="flex items-center gap-3">
-                <Shield className="text-indigo-400" size={20} />
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-slate-200">Admin Control Center</p>
-                  <p className="text-xs text-slate-400">Manage products, variants, and categories hierarchy</p>
+              <div className="flex items-center gap-3 text-left">
+                <Shield className="text-neutral-700" size={20} />
+                <div>
+                  <p className="text-sm font-bold text-neutral-800">Admin Control Center</p>
+                  <p className="text-xs text-neutral-500">Manage products, variants, and categories hierarchy</p>
                 </div>
               </div>
-              <span className="text-indigo-400 group-hover:translate-x-1 transition-transform">→</span>
+              <span className="text-neutral-700 group-hover:translate-x-1 transition-transform">→</span>
             </Link>
           ) : (
-            <div className="p-4 bg-slate-950/20 border border-slate-850 rounded-xl text-left">
-              <p className="text-xs text-slate-400 leading-relaxed">
-                <span className="font-semibold text-indigo-400">Tip:</span> Your account is registered with the <code className="text-indigo-300 font-bold bg-indigo-500/5 px-1.5 py-0.5 rounded">user</code> role. Admin-only pages like <code className="bg-slate-900 px-1 py-0.5 rounded">/admin</code> are guarded by the server and will block access. Register an admin account to test the role validation.
+            <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-xl text-left font-sans">
+              <p className="text-xs text-neutral-500 leading-relaxed">
+                <span className="font-semibold text-neutral-700">Tip:</span> Your account is registered with the <code className="text-neutral-800 font-bold bg-neutral-100 px-1.5 py-0.5 rounded">user</code> role. Admin-only pages like <code className="bg-neutral-100 px-1 py-0.5 rounded">/admin</code> are guarded by the server and will block access. Register an admin account to test the role validation.
               </p>
             </div>
           )}
 
           {/* Action buttons */}
-          <div className="flex gap-4 pt-2">
+          <div className="flex gap-4 pt-2 font-sans">
             <button
               onClick={handleManualRefresh}
-              className="flex-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 text-slate-300 font-medium py-3 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer active:scale-98"
+              className="flex-1 bg-white hover:bg-neutral-50 border border-neutral-300 text-neutral-700 font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer active:scale-[0.98]"
             >
               <RefreshCw size={16} />
               Refresh Token
             </button>
             <button
               onClick={handleLogout}
-              className="flex-1 bg-red-600/10 hover:bg-red-600/20 border border-red-500/20 hover:border-red-500/30 text-red-400 font-medium py-3 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer active:scale-98"
+              className="flex-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer active:scale-[0.98]"
             >
               <LogOut size={16} />
               Logout
@@ -155,42 +151,38 @@ const AdminView = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      {/* Glow effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none"></div>
-
-      <div className="w-full max-w-2xl bg-slate-900/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-8 shadow-2xl relative z-10">
-        <div className="flex items-center gap-3 border-b border-slate-800/60 pb-6 mb-6">
-          <div className="p-3 bg-purple-600/10 text-purple-400 rounded-xl border border-purple-500/20">
+    <div className="min-h-screen bg-neutral-50 text-neutral-800 flex flex-col items-center justify-center p-6 relative overflow-hidden select-none">
+      <div className="w-full max-w-2xl bg-white border border-neutral-200 rounded-2xl p-8 shadow-lg relative z-10">
+        <div className="flex items-center gap-3 border-b border-neutral-200 pb-6 mb-6">
+          <div className="p-3 bg-neutral-100 text-neutral-700 rounded-xl border border-neutral-200">
             <Shield size={24} />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-100 text-left">Admin Control Center</h1>
-            <p className="text-slate-400 text-sm">Privileged admin-only workspace</p>
+          <div className="text-left font-sans">
+            <h1 className="text-2xl font-bold text-neutral-900">Admin Control Center</h1>
+            <p className="text-neutral-500 text-sm">Privileged admin-only workspace</p>
           </div>
           <button 
             onClick={() => navigate('/profile')} 
-            className="ml-auto bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 text-xs font-semibold px-4 py-2 rounded-lg cursor-pointer"
+            className="ml-auto bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold px-4 py-2 rounded-lg cursor-pointer"
           >
             Back to Profile
           </button>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 font-sans">
           {/* Dashboard details */}
           <div className="grid grid-cols-3 gap-4">
-            <div className="p-4 bg-slate-950/60 border border-slate-850 rounded-xl text-left">
-              <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Users</span>
-              <p className="text-2xl font-bold text-slate-200 mt-1">124</p>
+            <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-xl text-left">
+              <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Total Users</span>
+              <p className="text-2xl font-black text-neutral-800 mt-1">124</p>
             </div>
-            <div className="p-4 bg-slate-950/60 border border-slate-850 rounded-xl text-left">
-              <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Active Admins</span>
-              <p className="text-2xl font-bold text-purple-400 mt-1">3</p>
+            <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-xl text-left">
+              <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Active Admins</span>
+              <p className="text-2xl font-black text-[#f0a500] mt-1">3</p>
             </div>
-            <div className="p-4 bg-slate-950/60 border border-slate-850 rounded-xl text-left">
-              <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Email Verified</span>
-              <p className="text-2xl font-bold text-green-400 mt-1">98%</p>
+            <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-xl text-left">
+              <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Email Verified</span>
+              <p className="text-2xl font-black text-emerald-600 mt-1">98%</p>
             </div>
           </div>
 
@@ -198,37 +190,37 @@ const AdminView = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Link
               to="/admin/products"
-              className="p-5 bg-indigo-600/10 hover:bg-indigo-600/15 border border-indigo-500/20 hover:border-indigo-500/30 rounded-xl text-left transition-all duration-350 group cursor-pointer flex flex-col justify-between"
+              className="p-5 bg-neutral-50 hover:bg-neutral-100/80 border border-neutral-200 rounded-xl text-left transition-all duration-350 group cursor-pointer flex flex-col justify-between"
             >
               <div>
-                <ShoppingBag size={24} className="text-indigo-400 mb-2" />
-                <h3 className="text-sm font-bold text-slate-200 group-hover:text-indigo-300 transition-colors">Manage Products</h3>
-                <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                <ShoppingBag size={24} className="text-neutral-700 mb-2" />
+                <h3 className="text-sm font-bold text-neutral-800 group-hover:text-neutral-900 transition-colors">Manage Products</h3>
+                <p className="text-[11px] text-neutral-500 mt-1 leading-relaxed">
                   Add menswear items, configure color swatches and sizing variants, set price overrides, and manage image files.
                 </p>
               </div>
-              <span className="text-xs font-bold text-indigo-400 mt-3 block group-hover:translate-x-1 transition-transform">Configure Products →</span>
+              <span className="text-xs font-bold text-neutral-700 mt-3 block group-hover:translate-x-1 transition-transform">Configure Products →</span>
             </Link>
 
             <Link
               to="/admin/categories"
-              className="p-5 bg-purple-600/10 hover:bg-purple-600/15 border border-purple-500/20 hover:border-purple-500/30 rounded-xl text-left transition-all duration-350 group cursor-pointer flex flex-col justify-between"
+              className="p-5 bg-neutral-50 hover:bg-neutral-100/80 border border-neutral-200 rounded-xl text-left transition-all duration-350 group cursor-pointer flex flex-col justify-between"
             >
               <div>
-                <FolderOpen size={24} className="text-purple-400 mb-2" />
-                <h3 className="text-sm font-bold text-slate-200 group-hover:text-purple-300 transition-colors">Category Builder</h3>
-                <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                <FolderOpen size={24} className="text-neutral-700 mb-2" />
+                <h3 className="text-sm font-bold text-neutral-800 group-hover:text-neutral-900 transition-colors">Category Builder</h3>
+                <p className="text-[11px] text-neutral-500 mt-1 leading-relaxed">
                   Structure catalog groupings, handle parent-child categories hierarchy, and reorder active menu items dynamically.
                 </p>
               </div>
-              <span className="text-xs font-bold text-purple-400 mt-3 block group-hover:translate-x-1 transition-transform">Configure Categories →</span>
+              <span className="text-xs font-bold text-neutral-700 mt-3 block group-hover:translate-x-1 transition-transform">Configure Categories →</span>
             </Link>
           </div>
 
-          <div className="p-5 bg-purple-600/5 border border-purple-500/10 rounded-xl text-left">
-            <h2 className="text-sm font-semibold text-purple-300 mb-2">Access Granted</h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              If you are seeing this dashboard, the authorization system successfully processed your token and verified your <code className="text-purple-400 font-semibold px-1 rounded bg-purple-500/5">admin</code> role. The backend returned a mock <code className="bg-slate-900 px-1 py-0.5 rounded">200 OK</code> response.
+          <div className="p-5 bg-neutral-50 border border-neutral-200 rounded-xl text-left">
+            <h2 className="text-sm font-bold text-neutral-800 mb-2">Access Granted</h2>
+            <p className="text-xs text-neutral-500 leading-relaxed font-sans">
+              If you are seeing this dashboard, the authorization system successfully processed your token and verified your <code className="text-neutral-800 font-bold px-1 rounded bg-neutral-100">admin</code> role. The backend returned a mock <code className="bg-neutral-100 px-1 py-0.5 rounded">200 OK</code> response.
             </p>
           </div>
         </div>
@@ -245,6 +237,8 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<number | null>(null);
   const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchVal, setSearchVal] = useState('');
 
   // Close admin dropdown when clicking outside
   useEffect(() => {
@@ -285,64 +279,82 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchVal.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchVal.trim())}`);
+      setSearchOpen(false);
+      setSearchVal('');
+    }
+  };
+
   return (
-    <nav className="bg-slate-950/75 backdrop-blur-xl border-b border-slate-800/60 sticky top-0 z-50 select-none">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <nav className="bg-[#000000] text-white sticky top-0 z-50 select-none font-sans">
+      {/* Row 1: Brand name / navigation menu / icons */}
+      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between border-b border-neutral-900">
         
-        {/* Brand Logo */}
-        <Link to="/products" className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-indigo-400 tracking-widest uppercase hover:opacity-90 transition-opacity">
-          GENTWear
+        {/* Brand Logo (Serif letter-spaced elegant Odel style) */}
+        <Link to="/products" className="text-xl md:text-2xl font-serif tracking-[0.25em] font-semibold text-white uppercase hover:opacity-90 transition-opacity">
+          G E N T W E A R
         </Link>
 
-        {/* Desktop Category Navigation */}
-        <div className="hidden md:flex items-center gap-6">
-          <Link to="/products" className="text-sm font-semibold text-slate-350 hover:text-slate-100 transition-colors">
-            Collections
+        {/* Center Simple Links */}
+        <div className="hidden lg:flex items-center gap-8 text-[11px] font-bold uppercase tracking-widest">
+          <Link to="/products" className="text-neutral-350 hover:text-white transition-colors">
+            Deals
           </Link>
-
-          {categories.map((cat) => {
-            const hasSubs = cat.subcategories && cat.subcategories.length > 0;
-            return (
-              <div 
-                key={cat.id} 
-                className="relative group py-2"
-                onMouseEnter={() => hasSubs && setDropdownOpen(cat.id)}
-                onMouseLeave={() => setDropdownOpen(null)}
-              >
-                <button 
-                  onClick={() => navigate(`/products?category_id=${cat.id}`)}
-                  className="text-sm font-semibold text-slate-350 hover:text-slate-100 flex items-center gap-1 transition-colors cursor-pointer"
-                >
-                  {cat.name}
-                  {hasSubs && <ChevronDown size={14} className="group-hover:rotate-180 transition-transform" />}
-                </button>
-
-                {/* Subcategories Dropdown */}
-                {hasSubs && dropdownOpen === cat.id && (
-                  <div className="absolute top-full left-0 mt-1.5 w-48 bg-slate-900/95 border border-slate-800 rounded-xl shadow-2xl p-2 flex flex-col gap-1 z-20 backdrop-blur-md">
-                    {cat.subcategories.map((sub: any) => (
-                      <Link
-                        key={sub.id}
-                        to={`/products?category_id=${sub.id}`}
-                        className="text-xs font-semibold text-slate-400 hover:text-indigo-400 py-2 px-3.5 rounded-lg hover:bg-slate-850 transition-colors"
-                      >
-                        {sub.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          <Link to="/products?sort=newest" className="text-neutral-350 hover:text-white transition-colors">
+            New Collection
+          </Link>
+          <button 
+            onClick={() => {
+              const el = document.getElementById('shop-by-brand-section');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="text-neutral-300 hover:text-white transition-colors cursor-pointer"
+          >
+            Shop By Brands
+          </button>
         </div>
 
-        {/* Right Section: User details & Admin portal link */}
-        <div className="hidden md:flex items-center gap-4">
+        {/* Right Section: Icons */}
+        <div className="flex items-center gap-4">
+          
+          {/* Animated Search Bar Toggle */}
+          <div className="relative flex items-center">
+            <AnimatePresence>
+              {searchOpen && (
+                <motion.form 
+                  onSubmit={handleSearchSubmit}
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: 180, opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  className="mr-2 overflow-hidden flex items-center"
+                >
+                  <input 
+                    type="text" 
+                    placeholder="Search catalog..." 
+                    value={searchVal}
+                    onChange={(e) => setSearchVal(e.target.value)}
+                    className="bg-neutral-900 border border-neutral-800 text-xs text-white px-3 py-1.5 rounded-lg focus:outline-none focus:border-neutral-600 w-full"
+                  />
+                </motion.form>
+              )}
+            </AnimatePresence>
+            <button 
+              onClick={() => setSearchOpen(!searchOpen)} 
+              className="text-neutral-300 hover:text-white p-2 rounded-xl transition-all cursor-pointer"
+              title="Search"
+            >
+              <Search size={18} />
+            </button>
+          </div>
+
           {/* Wishlist Link */}
-          <Link to="/wishlist" className="relative text-slate-400 hover:text-red-400 hover:bg-slate-900/40 p-2 rounded-xl transition-all cursor-pointer" title="Wishlist">
-            <Heart size={20} className={wishlistCount > 0 ? "fill-red-500 text-red-500" : ""} />
+          <Link to="/wishlist" className="relative text-neutral-300 hover:text-[#f0a500] p-2 rounded-xl transition-all cursor-pointer" title="Wishlist">
+            <Heart size={18} className={wishlistCount > 0 ? "fill-[#f0a500] text-[#f0a500]" : ""} />
             {wishlistCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[9px] font-extrabold border border-slate-950 px-1 shadow-md">
+              <span className="absolute top-0 right-0 min-w-4 h-4 bg-[#f0a500] text-white rounded-full flex items-center justify-center text-[8px] font-black px-1 shadow-md">
                 {wishlistCount}
               </span>
             )}
@@ -352,12 +364,12 @@ const Navbar = () => {
           <button 
             id="navbar-cart-btn"
             onClick={toggleDrawer} 
-            className="relative text-slate-400 hover:text-indigo-400 hover:bg-slate-900/40 p-2 rounded-xl transition-all cursor-pointer" 
+            className="relative text-neutral-300 hover:text-[#f0a500] p-2 rounded-xl transition-all cursor-pointer" 
             title="Cart"
           >
-            <ShoppingBag size={20} />
+            <ShoppingBag size={18} />
             {cartCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 bg-indigo-600 text-white rounded-full flex items-center justify-center text-[9px] font-extrabold border border-slate-950 px-1 shadow-md">
+              <span className="absolute top-0 right-0 min-w-4 h-4 bg-[#f0a500] text-white rounded-full flex items-center justify-center text-[8px] font-black px-1 shadow-md">
                 {cartCount}
               </span>
             )}
@@ -369,9 +381,9 @@ const Navbar = () => {
                 <div className="relative py-2 admin-dropdown-container">
                   <button 
                     onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
-                    className="text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 hover:bg-indigo-500/15 transition-all cursor-pointer"
+                    className="text-[10px] font-bold uppercase tracking-wider text-[#f0a500] bg-neutral-900 border border-neutral-800 px-3 py-1.5 rounded-xl flex items-center gap-1 hover:bg-neutral-800 transition-all cursor-pointer"
                   >
-                    <Shield size={12} /> Admin Area <ChevronDown size={12} className={`transition-transform duration-200 ${adminDropdownOpen ? 'rotate-180' : ''}`} />
+                    <Shield size={10} /> Admin <ChevronDown size={10} className={`transition-transform duration-200 ${adminDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
                   <AnimatePresence>
                     {adminDropdownOpen && (
@@ -379,87 +391,103 @@ const Navbar = () => {
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 8 }}
-                        transition={{ duration: 0.15, ease: 'easeOut' }}
-                        className="absolute right-0 top-full mt-1.5 w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-2 flex flex-col gap-1 z-20"
+                        transition={{ duration: 0.1, ease: 'easeOut' }}
+                        className="absolute right-0 top-full mt-1.5 w-44 bg-neutral-950 border border-neutral-900 rounded-xl shadow-2xl p-2 flex flex-col gap-1 z-20"
                       >
-                        <Link to="/admin" onClick={() => setAdminDropdownOpen(false)} className="text-xs font-bold text-slate-300 hover:text-indigo-400 p-2.5 rounded-lg hover:bg-slate-850 transition-colors flex items-center gap-2">
-                          <Shield size={12} /> Control Center
+                        <Link to="/admin" onClick={() => setAdminDropdownOpen(false)} className="text-[10px] font-bold text-neutral-300 hover:text-white p-2 rounded-lg hover:bg-neutral-900 transition-colors flex items-center gap-2">
+                          <Shield size={11} /> Control Center
                         </Link>
-                        <Link to="/admin/products" onClick={() => setAdminDropdownOpen(false)} className="text-xs font-bold text-slate-300 hover:text-indigo-400 p-2.5 rounded-lg hover:bg-slate-850 transition-colors flex items-center gap-2">
-                          <ShoppingBag size={12} /> Manage Products
+                        <Link to="/admin/products" onClick={() => setAdminDropdownOpen(false)} className="text-[10px] font-bold text-neutral-300 hover:text-white p-2 rounded-lg hover:bg-neutral-900 transition-colors flex items-center gap-2">
+                          <ShoppingBag size={11} /> Manage Products
                         </Link>
-                        <Link to="/admin/categories" onClick={() => setAdminDropdownOpen(false)} className="text-xs font-bold text-slate-300 hover:text-indigo-400 p-2.5 rounded-lg hover:bg-slate-850 transition-colors flex items-center gap-2">
-                          <FolderOpen size={12} /> Category Builder
+                        <Link to="/admin/categories" onClick={() => setAdminDropdownOpen(false)} className="text-[10px] font-bold text-neutral-300 hover:text-white p-2 rounded-lg hover:bg-neutral-900 transition-colors flex items-center gap-2">
+                          <FolderOpen size={11} /> Category Builder
                         </Link>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
               )}
-              <Link to="/profile" className="text-slate-300 hover:text-white transition-colors" title="My Profile">
-                <div className="w-8.5 h-8.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-200">
-                  <UserIcon size={16} />
+              <Link to="/profile" className="text-neutral-300 hover:text-white transition-colors" title="My Profile">
+                <div className="w-8 h-8 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400 hover:text-neutral-200">
+                  <UserIcon size={14} />
                 </div>
               </Link>
-              <button onClick={handleLogout} className="text-slate-450 hover:text-red-400 transition-colors cursor-pointer" title="Logout">
-                <LogOut size={18} />
+              <button onClick={handleLogout} className="text-neutral-450 hover:text-red-400 transition-colors cursor-pointer" title="Logout">
+                <LogOut size={16} />
               </button>
             </>
           ) : (
-            <div className="flex gap-3">
-              <Link to="/login" className="text-xs font-bold text-slate-300 hover:text-white border border-slate-850 bg-slate-900/60 hover:bg-slate-850 px-4 py-2 rounded-xl transition-all">
+            <div className="hidden md:flex gap-2.5">
+              <Link to="/login" className="text-[10px] font-bold uppercase tracking-wider text-neutral-300 hover:text-white border border-neutral-850 bg-neutral-900/60 hover:bg-neutral-850 px-3 py-1.5 rounded-lg transition-all">
                 Login
               </Link>
-              <Link to="/register" className="text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2.5 rounded-xl transition-all shadow-md shadow-indigo-600/10">
+              <Link to="/register" className="text-[10px] font-bold uppercase tracking-wider text-black bg-white hover:bg-neutral-250 px-3.5 py-1.5 rounded-lg transition-all shadow-md">
                 Register
               </Link>
             </div>
           )}
-        </div>
 
-        {/* Mobile menu trigger */}
-        <div className="md:hidden flex items-center gap-3">
-          {/* Wishlist Link */}
-          <Link to="/wishlist" className="relative text-slate-400 hover:text-red-400 p-1.5 cursor-pointer" title="Wishlist">
-            <Heart size={18} className={wishlistCount > 0 ? "fill-red-500 text-red-500" : ""} />
-            {wishlistCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] font-bold border border-slate-950 px-0.5">
-                {wishlistCount}
-              </span>
-            )}
-          </Link>
-
-          {/* Cart trigger */}
-          <button onClick={toggleDrawer} className="relative text-slate-400 hover:text-indigo-400 p-1.5 cursor-pointer" title="Cart">
-            <ShoppingBag size={18} />
-            {cartCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 bg-indigo-600 text-white rounded-full flex items-center justify-center text-[8px] font-bold border border-slate-950 px-0.5">
-                {cartCount}
-              </span>
-            )}
-          </button>
-
-          {user && (
-            <Link to="/profile" className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400">
-              <UserIcon size={14} />
-            </Link>
-          )}
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-slate-300 hover:text-white">
+          {/* Mobile menu trigger */}
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden text-neutral-300 hover:text-white p-1">
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
 
       </div>
 
+      {/* Row 2: Categories menu bar (Centered horizontally) */}
+      <div className="bg-[#000000] border-b border-neutral-950/80 shadow-md">
+        <div className="max-w-7xl mx-auto px-6 h-10 flex items-center justify-center overflow-x-auto gap-8 no-scrollbar">
+          <Link to="/products" className="text-[10px] font-extrabold uppercase tracking-widest text-neutral-400 hover:text-white py-2 shrink-0 transition-colors">
+            All Collections
+          </Link>
+          {categories.map((cat) => {
+            const hasSubs = cat.subcategories && cat.subcategories.length > 0;
+            return (
+              <div 
+                key={cat.id} 
+                className="relative group py-2 shrink-0"
+                onMouseEnter={() => hasSubs && setDropdownOpen(cat.id)}
+                onMouseLeave={() => setDropdownOpen(null)}
+              >
+                <button 
+                  onClick={() => navigate(`/products?category_id=${cat.id}`)}
+                  className="text-[10px] font-extrabold uppercase tracking-widest text-neutral-400 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  {cat.name}
+                  {hasSubs && <ChevronDown size={10} className="group-hover:rotate-180 transition-transform" />}
+                </button>
+
+                {/* Subcategories Dropdown */}
+                {hasSubs && dropdownOpen === cat.id && (
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-44 bg-neutral-950 border border-neutral-900 rounded-xl shadow-2xl p-2 flex flex-col gap-1 z-20 backdrop-blur-md">
+                    {cat.subcategories.map((sub: any) => (
+                      <Link
+                        key={sub.id}
+                        to={`/products?category_id=${sub.id}`}
+                        className="text-[10px] font-bold text-neutral-400 hover:text-white py-2 px-3 rounded-lg hover:bg-neutral-900 transition-colors"
+                      >
+                        {sub.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Mobile Drawer Overlay */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-slate-950 border-b border-slate-850 p-6 flex flex-col gap-4 animate-fadeIn">
-          <Link to="/products" onClick={() => setMobileMenuOpen(false)} className="text-sm font-semibold text-slate-350 hover:text-slate-100">
+        <div className="lg:hidden bg-neutral-950 border-b border-neutral-900 p-6 flex flex-col gap-4 animate-fadeIn">
+          <Link to="/products" onClick={() => setMobileMenuOpen(false)} className="text-[11px] font-bold uppercase tracking-widest text-neutral-350 hover:text-white">
             Collections
           </Link>
           {categories.map((cat) => (
             <div key={cat.id} className="space-y-1.5">
-              <Link to={`/products?category_id=${cat.id}`} onClick={() => setMobileMenuOpen(false)} className="text-sm font-bold text-slate-200 block">
+              <Link to={`/products?category_id=${cat.id}`} onClick={() => setMobileMenuOpen(false)} className="text-[11px] font-bold uppercase tracking-widest text-white block">
                 {cat.name}
               </Link>
               {cat.subcategories?.map((sub: any) => (
@@ -467,7 +495,7 @@ const Navbar = () => {
                   key={sub.id}
                   to={`/products?category_id=${sub.id}`}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-xs text-slate-400 block pl-3"
+                  className="text-xs text-neutral-400 block pl-3"
                 >
                   • {sub.name}
                 </Link>
@@ -476,16 +504,16 @@ const Navbar = () => {
           ))}
 
           {user ? (
-            <div className="pt-4 border-t border-slate-900 space-y-3">
+            <div className="pt-4 border-t border-neutral-900 space-y-3">
               {user.role === 'admin' && (
                 <>
-                  <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-indigo-400 block py-1">
+                  <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-[#f0a500] block py-1">
                     Admin Control Center
                   </Link>
-                  <Link to="/admin/products" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-slate-300 block py-1">
+                  <Link to="/admin/products" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-neutral-300 block py-1">
                     Manage Products
                   </Link>
-                  <Link to="/admin/categories" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-slate-300 block py-1">
+                  <Link to="/admin/categories" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-neutral-300 block py-1">
                     Category Builder
                   </Link>
                 </>
@@ -495,11 +523,11 @@ const Navbar = () => {
               </button>
             </div>
           ) : (
-            <div className="flex gap-3 pt-4 border-t border-slate-900">
-              <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="flex-1 text-center text-xs font-bold text-slate-300 border border-slate-850 py-2.5 rounded-xl">
+            <div className="flex gap-3 pt-4 border-t border-neutral-900">
+              <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="flex-1 text-center text-xs font-bold text-neutral-300 border border-neutral-900 py-2.5 rounded-xl">
                 Login
               </Link>
-              <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="flex-1 text-center text-xs font-bold text-white bg-indigo-600 py-2.5 rounded-xl">
+              <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="flex-1 text-center text-xs font-bold text-black bg-white py-2.5 rounded-xl">
                 Register
               </Link>
             </div>
@@ -531,11 +559,109 @@ const PageWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   );
 };
 
+// Global Footer Component matching Odel layout
+const Footer = () => {
+  const navigate = useNavigate();
+  return (
+    <footer className="bg-[#1c1c1c] text-neutral-300 font-sans pt-12 select-none">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8 pb-12 border-b border-neutral-800">
+        
+        {/* Customer Care */}
+        <div className="text-left space-y-4">
+          <h4 className="text-xs uppercase font-extrabold tracking-widest text-white">Customer Care</h4>
+          <ul className="space-y-2 text-xs text-neutral-400">
+            <li className="hover:text-white cursor-pointer transition-colors">Return & Refund</li>
+            <li className="hover:text-white cursor-pointer transition-colors">Contact Us</li>
+            <li className="hover:text-white cursor-pointer transition-colors">Service Payment</li>
+            <li className="hover:text-white cursor-pointer transition-colors">Store Locator</li>
+            <li className="hover:text-white cursor-pointer transition-colors">CRM</li>
+          </ul>
+        </div>
+
+        {/* Get To Know Us */}
+        <div className="text-left space-y-4">
+          <h4 className="text-xs uppercase font-extrabold tracking-widest text-white">Get To Know Us</h4>
+          <ul className="space-y-2 text-xs text-neutral-400">
+            <li className="hover:text-white cursor-pointer transition-colors">Investor Information</li>
+            <li className="hover:text-white cursor-pointer transition-colors">Odel Magazine</li>
+          </ul>
+          {/* Social Icons */}
+          <div className="flex gap-3 pt-2">
+            {['facebook', 'twitter', 'instagram'].map((social) => (
+              <a 
+                key={social} 
+                href="#" 
+                className="w-8 h-8 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-white transition-colors"
+              >
+                <span className="capitalize text-[10px] font-bold">{social[0]}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* Let Us Help You */}
+        <div className="text-left space-y-4">
+          <h4 className="text-xs uppercase font-extrabold tracking-widest text-white">Let Us Help You</h4>
+          <ul className="space-y-2 text-xs text-neutral-400">
+            <li onClick={() => navigate('/profile')} className="hover:text-white cursor-pointer transition-colors">My Account</li>
+            <li onClick={() => navigate('/profile')} className="hover:text-white cursor-pointer transition-colors">My Orders</li>
+            <li className="hover:text-white cursor-pointer transition-colors">Terms Of Use</li>
+            <li className="hover:text-white cursor-pointer transition-colors">Privacy Policy</li>
+            <li className="hover:text-white cursor-pointer transition-colors">FAQs</li>
+          </ul>
+        </div>
+
+        {/* Sign up for Newsletter */}
+        <div className="text-left space-y-4">
+          <h4 className="text-xs uppercase font-extrabold tracking-widest text-white">Sign up for Newsletter</h4>
+          <p className="text-[11px] text-neutral-400 leading-normal">
+            Keep updated with our latest collections and exclusive promotional deals.
+          </p>
+          <div className="flex flex-col gap-2">
+            <input 
+              type="email" 
+              placeholder="Enter your email address" 
+              className="bg-[#2a2a2a] text-xs text-white px-4 py-2.5 rounded border border-neutral-700 focus:outline-none focus:border-neutral-500 w-full"
+            />
+            <button 
+              onClick={() => toast.success('Subscribed successfully!')}
+              className="bg-[#f0a500] hover:bg-[#d49200] text-white text-[11px] font-bold uppercase tracking-wider py-2.5 rounded transition-all active:scale-[0.98] cursor-pointer"
+            >
+              Subscribe
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Sub-footer Brand logos */}
+      <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row justify-between items-center gap-6 border-b border-neutral-850">
+        <span className="text-[11px] uppercase tracking-widest text-neutral-500 font-extrabold">Shop At Our Group Companies</span>
+        <div className="flex gap-8 items-center">
+          <span className="font-serif italic text-white tracking-widest hover:opacity-80 transition-opacity cursor-pointer">mysoftlogic.lk</span>
+          <span className="font-sans font-bold text-white tracking-widest uppercase hover:opacity-80 transition-opacity cursor-pointer text-sm">softlogic GLOMARK</span>
+        </div>
+      </div>
+
+      {/* Bottom copyright row */}
+      <div className="bg-[#0f121d] py-6 text-center text-xs text-neutral-500 flex flex-col md:flex-row justify-between items-center px-6 max-w-7xl mx-auto gap-4">
+        <span>Copyright © 2026 GENTWear. All rights reserved.</span>
+        <div className="flex gap-3 text-[10px] text-neutral-450 uppercase font-semibold">
+          <span>Visa</span>
+          <span>Mastercard</span>
+          <span>Amex</span>
+          <span>Stripe</span>
+        </div>
+      </div>
+    </footer>
+  );
+};
+
 const AppContent: React.FC = () => {
   const location = useLocation();
 
   return (
-    <div className="bg-slate-950 min-h-screen text-slate-100 flex flex-col selection:bg-indigo-600 selection:text-white">
+    <div className="bg-white min-h-screen text-neutral-900 flex flex-col selection:bg-neutral-900 selection:text-white">
       <NavbarWrapper />
       
       <main className="flex-1">
@@ -671,21 +797,24 @@ const AppContent: React.FC = () => {
       {/* Global Cart Slide-in Drawer */}
       <CartDrawer />
 
+      {/* Global Footer component */}
+      <Footer />
+
       {/* React Hot Toast setup */}
       <Toaster 
         position="top-right" 
         toastOptions={{
           duration: 3000,
           style: {
-            background: '#0f172a',
-            color: '#f8fafc',
-            border: '1px solid #1e293b',
+            background: '#ffffff',
+            color: '#1a1a1a',
+            border: '1px solid #e5e7eb',
             borderRadius: '0.75rem',
             backdropFilter: 'blur(8px)',
           },
           success: {
             iconTheme: {
-              primary: '#6366f1',
+              primary: '#f0a500',
               secondary: '#ffffff',
             },
           },

@@ -25,6 +25,12 @@ export const getImageUrl = (url?: string) => {
   return `http://localhost:5000${url}`;
 };
 
+export const formatLKR = (usdPrice: any) => {
+  if (!usdPrice) return '';
+  const converted = Math.round(parseFloat(usdPrice) * 300);
+  return `LKR ${converted.toLocaleString()}`;
+};
+
 const ProductList: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -87,48 +93,16 @@ const ProductList: React.FC = () => {
   const [collabRecs, setCollabRecs] = useState<Product[]>([]);
   const [collabLoading, setCollabLoading] = useState(false);
 
-  // Hero banner states and references
-  const [heroBanner, setHeroBanner] = useState<any | null>(null);
-  const heroRef = useRef<HTMLDivElement>(null);
-  const heroImgRef = useRef<HTMLImageElement>(null);
+  // Hero banner slider state
+  const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Fetch public active banners
+  // Auto-play sliding carousel every 6 seconds
   useEffect(() => {
-    const fetchBanners = async () => {
-      try {
-        const { data } = await api.get('/products/banners');
-        const hero = data.find((b: any) => b.position === 'hero');
-        setHeroBanner(hero || null);
-      } catch (err) {
-        console.warn('Failed to load public hero banner:', err);
-      }
-    };
-    fetchBanners();
+    const timer = setInterval(() => {
+      setCurrentSlide(prev => (prev === 0 ? 1 : 0));
+    }, 6000);
+    return () => clearInterval(timer);
   }, []);
-
-  // Parallax animation setup via ScrollTrigger
-  useEffect(() => {
-    let ctx = gsap.context(() => {
-      if (heroRef.current && heroImgRef.current) {
-        import('gsap/ScrollTrigger').then(({ ScrollTrigger }) => {
-          gsap.registerPlugin(ScrollTrigger);
-
-          gsap.to(heroImgRef.current, {
-            yPercent: 30,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: heroRef.current,
-              start: 'top top',
-              end: 'bottom top',
-              scrub: true,
-            },
-          });
-        });
-      }
-    });
-
-    return () => ctx.revert();
-  }, [heroBanner]);
 
   // Load all product names into the autocomplete Trie on mount
   useEffect(() => {
@@ -216,7 +190,7 @@ const ProductList: React.FC = () => {
       } else {
         const params: any = {
           page: currentPage,
-          limit: 9,
+          limit: 12, // increase layout density for 4-column alignment
           sort
         };
         if (selectedCategory) params.category_id = selectedCategory;
@@ -271,93 +245,188 @@ const ProductList: React.FC = () => {
     setSort('newest');
     setIsAISearch(false);
     setCurrentPage(1);
-    // Fetch immediately
     setTimeout(() => fetchProducts(), 0);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-12 relative overflow-hidden">
-      {/* Background blobs */}
-      <div className="absolute top-10 left-10 w-80 h-80 bg-indigo-600/5 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-600/5 rounded-full blur-[150px] pointer-events-none"></div>
-
+    <div className="min-h-screen bg-white text-neutral-800 p-6 md:p-12 relative overflow-hidden select-none font-sans">
       <div className="max-w-7xl mx-auto relative z-10">
-        {/* Parallax Hero Banner */}
-        <div 
-          ref={heroRef} 
-          className="relative h-[40vh] md:h-[52vh] w-full overflow-hidden rounded-3xl mb-12 border border-slate-900 shadow-2xl"
-        >
-          <img
-            ref={heroImgRef}
-            src={heroBanner ? getImageUrl(heroBanner.image_url) : 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1920&q=80'}
-            alt="GENTWear Campaign"
-            className="absolute top-0 left-0 w-full h-[140%] object-cover brightness-40"
-            style={{ transform: 'translateY(-20%)' }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/20 flex flex-col justify-end p-8 md:p-12 text-left">
-            <div className="max-w-2xl space-y-4">
-              <span className="text-xs font-bold uppercase tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full w-fit">
-                New Season Campaign
-              </span>
-              <h1 className="text-3xl md:text-5xl font-black uppercase tracking-wider text-slate-100 leading-tight">
-                Sartorial Excellence
-              </h1>
-              <p className="text-slate-300 text-xs md:text-sm leading-relaxed max-w-lg">
-                Handcrafted premium menswear collections designed for the modern gentleman. Discover clean silhouettes, luxurious fabrics, and flawless detailing.
-              </p>
-              <div className="flex gap-3 pt-1">
+        
+        {/* custom slider carousel */}
+        <div className="relative w-full h-[38vh] md:h-[50vh] overflow-hidden rounded-3xl mb-12 border border-neutral-200/80 shadow-md flex bg-white">
+          {currentSlide === 0 ? (
+            <div className="w-full h-full flex flex-col md:flex-row animate-fade-in">
+              <div className="w-full md:w-[40%] bg-[#f4efe8] flex flex-col justify-center p-8 md:p-12 text-left h-full">
+                <span className="font-serif tracking-[0.3em] text-neutral-500 text-xs uppercase">O D E L</span>
+                <h2 className="font-serif text-3xl md:text-5xl font-light tracking-wide text-neutral-900 mt-5 leading-tight">
+                  THE PARADISE <br/>
+                  <span className="italic font-normal font-playfair">edit</span>
+                </h2>
                 <button 
                   onClick={() => {
                     const el = document.getElementById('catalog-grid-section');
                     if (el) el.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] uppercase tracking-wider px-5 py-3 rounded-xl shadow-lg shadow-indigo-600/20 transition-all cursor-pointer hover:-translate-y-0.5 active:scale-98"
+                  className="bg-black text-white hover:bg-neutral-800 uppercase tracking-widest text-[9px] font-bold px-5 py-3 mt-6 w-fit rounded-full transition-all active:scale-[0.98] cursor-pointer"
                 >
-                  Shop Catalog
+                  Shop Now
                 </button>
+              </div>
+              <div className="w-full md:w-[60%] relative h-full">
+                <img 
+                  src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80" 
+                  alt="Paradise Edit"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="w-full h-full flex flex-col md:flex-row animate-fade-in">
+              <div className="w-full md:w-[40%] bg-[#1c1c1c] flex flex-col justify-center p-8 md:p-12 text-left h-full text-white">
+                <span className="font-sans tracking-[0.25em] text-neutral-400 text-[10px] uppercase font-bold">End of Season</span>
+                <h2 className="font-serif text-3xl md:text-5xl font-black text-[#f0a500] mt-4 leading-tight uppercase">
+                  SALE 60% OFF
+                </h2>
+                <p className="text-neutral-400 text-xs mt-3 tracking-wider leading-relaxed">
+                  Valid from 08th - 30th June. Until stocks last.
+                </p>
                 <button 
                   onClick={() => {
-                    setIsAISearch(true);
-                    setSearch('suit');
-                    setCurrentPage(1);
-                    setTimeout(() => fetchProducts(), 50);
-                    setTimeout(() => {
-                      const el = document.getElementById('catalog-grid-section');
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
-                    }, 100);
+                    const el = document.getElementById('catalog-grid-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 text-slate-200 font-bold text-[10px] uppercase tracking-wider px-5 py-3 rounded-xl backdrop-blur-md transition-all cursor-pointer hover:-translate-y-0.5 active:scale-98"
+                  className="bg-[#f0a500] hover:bg-[#d49200] text-black uppercase tracking-widest text-[9px] font-bold px-5 py-3 mt-6 w-fit rounded-full transition-all active:scale-[0.98] cursor-pointer"
                 >
-                  Discover AI Matches
+                  Explore Sale
                 </button>
+              </div>
+              <div className="w-full md:w-[60%] relative h-full">
+                <img 
+                  src="https://images.unsplash.com/photo-1488161628813-04466f872be2?auto=format&fit=crop&w=1200&q=80" 
+                  alt="Season Sale"
+                  className="absolute inset-0 w-full h-full object-cover animate-fade-in"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Slider Indicators */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2.5 z-20">
+            {[0, 1].map((slideIdx) => (
+              <button
+                key={slideIdx}
+                onClick={() => setCurrentSlide(slideIdx)}
+                className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                  currentSlide === slideIdx ? 'w-6 bg-black' : 'w-2 bg-neutral-400/60'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Promotions Section */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-serif text-neutral-900 font-bold tracking-wide text-left mb-6">Promotions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Promo Card 1 */}
+            <div className="relative h-48 rounded-2xl overflow-hidden border border-neutral-100 shadow-sm group cursor-pointer">
+              <img 
+                src="https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=800&q=80" 
+                alt="Fragrance Promo" 
+                className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex flex-col justify-center p-6 text-left text-white">
+                <span className="text-[10px] tracking-widest uppercase font-extrabold text-[#f0a500]">LIFESTYLE EDIT</span>
+                <h3 className="text-xl font-serif mt-2 font-semibold">Luxury Fragrances</h3>
+                <p className="text-[11px] text-neutral-350 mt-1 max-w-[220px] leading-normal">Experience timeless luxury scents designed for the modern gentleman.</p>
+              </div>
+            </div>
+            
+            {/* Promo Card 2 */}
+            <div className="relative h-48 rounded-2xl overflow-hidden border border-neutral-100 shadow-sm group cursor-pointer">
+              <img 
+                src="https://images.unsplash.com/photo-1534030756701-46b7edb57629?auto=format&fit=crop&w=800&q=80" 
+                alt="Suits Promo" 
+                className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex flex-col justify-center p-6 text-left text-white">
+                <span className="text-[10px] tracking-widest uppercase font-extrabold text-[#f0a500]">TAILORING DEALS</span>
+                <h3 className="text-xl font-serif mt-2 font-semibold">Bespoke Blazers</h3>
+                <p className="text-[11px] text-neutral-355 mt-1 max-w-[220px] leading-normal">Discover structural excellence and hand-stitched premium wool items.</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Header Title */}
-        <div className="mb-10 text-center md:text-left">
-          <span className="text-indigo-400 text-xs font-bold tracking-widest uppercase mb-2 block">Premium Apparel</span>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-slate-100 via-indigo-200 to-purple-300">
-            Explore GENTWear Collections
-          </h1>
-          <p className="text-slate-400 mt-2 max-w-2xl text-sm md:text-base leading-relaxed">
-            Curated menswear designed with tailoring excellence. Browse through our premium selections, filtered exactly to your preferences.
-          </p>
+        {/* SHOP BY BRAND Section */}
+        <div id="shop-by-brand-section" className="mb-12">
+          <div className="bg-[#333333] text-white p-3 uppercase tracking-widest text-[10px] font-extrabold text-left mb-6 pl-6">
+            SHOP BY BRAND
+          </div>
+          <div className="relative flex items-center group">
+            {/* horizontal brands layout */}
+            <div className="w-full flex overflow-x-auto gap-4 py-2 no-scrollbar scroll-smooth">
+              
+              {/* Brand 1: Levi's */}
+              <div className="min-w-[240px] md:min-w-[280px] bg-white border border-neutral-200 rounded-xl p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow shrink-0">
+                <div className="text-left">
+                  <span className="text-[10px] text-neutral-400 font-bold tracking-widest uppercase">Casual Wear</span>
+                  <h4 className="text-sm font-bold text-neutral-800 mt-1 font-sans">Levi's</h4>
+                </div>
+                <div className="bg-[#cc0000] text-white text-xs font-black px-3.5 py-1.5 uppercase italic tracking-widest">
+                  Levi's
+                </div>
+              </div>
+
+              {/* Brand 2: U.S. Polo */}
+              <div className="min-w-[240px] md:min-w-[280px] bg-white border border-neutral-200 rounded-xl p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow shrink-0">
+                <div className="text-left">
+                  <span className="text-[10px] text-neutral-400 font-bold tracking-widest uppercase">Classic Polos</span>
+                  <h4 className="text-sm font-bold text-neutral-800 mt-1 font-sans">U.S. Polo Assn.</h4>
+                </div>
+                <div className="bg-[#0b2447] text-white text-[9px] font-bold px-3 py-2 uppercase tracking-wide text-center font-sans">
+                  U.S. POLO ASSN.
+                </div>
+              </div>
+
+              {/* Brand 3: Armani */}
+              <div className="min-w-[240px] md:min-w-[280px] bg-white border border-neutral-200 rounded-xl p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow shrink-0">
+                <div className="text-left">
+                  <span className="text-[10px] text-neutral-400 font-bold tracking-widest uppercase">High Fashion</span>
+                  <h4 className="text-sm font-bold text-neutral-800 mt-1 font-sans">Armani Exchange</h4>
+                </div>
+                <div className="border border-black text-black text-[10px] font-bold px-3 py-1.5 uppercase tracking-[0.2em]">
+                  A|X
+                </div>
+              </div>
+
+              {/* Brand 4: Cotton Collection */}
+              <div className="min-w-[240px] md:min-w-[280px] bg-white border border-neutral-200 rounded-xl p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow shrink-0">
+                <div className="text-left">
+                  <span className="text-[10px] text-neutral-400 font-bold tracking-widest uppercase">Natural Cotton</span>
+                  <h4 className="text-sm font-bold text-neutral-800 mt-1 font-sans">Cotton Collection</h4>
+                </div>
+                <div className="font-serif italic text-neutral-800 text-xs font-semibold uppercase tracking-wider">
+                  cotton
+                </div>
+              </div>
+
+            </div>
+          </div>
         </div>
 
         {/* Action Controls & Filters Bar */}
         <div id="catalog-grid-section" className="flex flex-col lg:flex-row gap-8">
           
           {/* Sidebar Filters (Desktop) */}
-          <aside className="hidden lg:block w-72 shrink-0 bg-slate-900/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-6 shadow-xl sticky top-6 self-start">
-            <div className="flex justify-between items-center pb-4 border-b border-slate-800/60 mb-6">
-              <h2 className="text-lg font-bold flex items-center gap-2 text-slate-200">
-                <SlidersHorizontal size={18} className="text-indigo-400" /> Filters
+          <aside className="hidden lg:block w-72 shrink-0 bg-neutral-50 border border-neutral-200/80 rounded-2xl p-6 shadow-sm sticky top-24 self-start">
+            <div className="flex justify-between items-center pb-4 border-b border-neutral-200 mb-6">
+              <h2 className="text-base font-bold flex items-center gap-2 text-neutral-800 font-sans">
+                <SlidersHorizontal size={16} className="text-neutral-500" /> Filters
               </h2>
               <button 
                 onClick={handleResetFilters}
-                className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
+                className="text-xs font-bold text-[#f0a500] hover:text-[#d49200] transition-colors cursor-pointer"
               >
                 Reset All
               </button>
@@ -365,7 +434,7 @@ const ProductList: React.FC = () => {
 
             {/* Search Input with autocomplete suggestions */}
             <form onSubmit={handleSearchSubmit} className="mb-4 relative">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Search</label>
+              <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-2 block font-sans">Search</label>
               <div className="relative">
                 <input
                   type="text"
@@ -374,22 +443,22 @@ const ProductList: React.FC = () => {
                   onChange={(e) => handleSearchChange(e.target.value)}
                   onFocus={() => setShowSuggestions(suggestions.length > 0)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                  className="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-2.5 pl-4 pr-10 text-sm focus:outline-none focus:border-indigo-500/80 text-slate-100 placeholder-slate-500"
+                  className="w-full bg-white border border-neutral-300 rounded-xl py-2.5 pl-4 pr-10 text-xs focus:outline-none focus:border-neutral-500 text-neutral-800 placeholder-neutral-400 font-sans"
                 />
-                <button type="submit" className="absolute right-3 top-3 text-slate-400 hover:text-slate-200">
-                  <Search size={16} />
+                <button type="submit" className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600">
+                  <Search size={14} />
                 </button>
               </div>
 
               {/* Trie Autocomplete Suggestion Dropdown */}
               {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-slate-950/95 backdrop-blur-md border border-slate-800 rounded-xl shadow-2xl overflow-hidden z-30 p-1 flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg overflow-hidden z-30 p-1 flex flex-col gap-0.5 max-h-48 overflow-y-auto">
                   {suggestions.map((sug, idx) => (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => handleSuggestionClick(sug)}
-                      className="text-left text-xs text-slate-350 hover:text-indigo-400 hover:bg-slate-900 px-3.5 py-2 rounded-lg transition-colors cursor-pointer"
+                      className="text-left text-xs text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 px-3.5 py-2 rounded-lg transition-colors cursor-pointer font-sans"
                     >
                       {sug}
                     </button>
@@ -399,23 +468,23 @@ const ProductList: React.FC = () => {
             </form>
 
             {/* AI Search Toggle Switch */}
-            <div className="mb-6 bg-indigo-950/10 border border-indigo-500/10 rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-1">
-                  <Sparkles size={11} /> AI Semantic Search
+            <div className="mb-6 bg-neutral-100/50 border border-neutral-200 rounded-xl p-4 flex items-center justify-between">
+              <div className="text-left">
+                <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1 font-sans">
+                  <Sparkles size={10} /> AI Semantic Search
                 </span>
-                <p className="text-[9px] text-slate-450 mt-0.5 leading-normal">
-                  Vector search matching ideas and descriptions
+                <p className="text-[9px] text-neutral-450 mt-0.5 leading-tight font-sans">
+                  Vector search matching descriptive queries
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => { setIsAISearch(!isAISearch); setCurrentPage(1); }}
-                className={`w-10 h-6 rounded-full p-1 transition-colors relative cursor-pointer ${
-                  isAISearch ? 'bg-indigo-600' : 'bg-slate-800'
+                className={`w-9 h-5 rounded-full p-0.5 transition-colors relative cursor-pointer ${
+                  isAISearch ? 'bg-black' : 'bg-neutral-300'
                 }`}
               >
-                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${
+                <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${
                   isAISearch ? 'translate-x-4' : 'translate-x-0'
                 }`}></div>
               </button>
@@ -423,14 +492,14 @@ const ProductList: React.FC = () => {
 
             {/* Categories Filter */}
             <div className="mb-6">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 block">Categories</label>
-              <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+              <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-3 block font-sans">Categories</label>
+              <div className="space-y-1.5 max-h-60 overflow-y-auto custom-scrollbar pr-1">
                 <button
                   onClick={() => { setSelectedCategory(null); setCurrentPage(1); }}
-                  className={`w-full text-left text-sm py-2 px-3 rounded-lg transition-all ${
+                  className={`w-full text-left text-xs py-2 px-3 rounded-lg transition-all font-sans ${
                     selectedCategory === null 
-                      ? 'bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 font-semibold' 
-                      : 'hover:bg-slate-800/50 text-slate-400 hover:text-slate-200'
+                      ? 'bg-neutral-900 text-white font-bold' 
+                      : 'hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900'
                   }`}
                 >
                   All Products
@@ -440,25 +509,25 @@ const ProductList: React.FC = () => {
                   <div key={cat.id} className="space-y-1">
                     <button
                       onClick={() => { setSelectedCategory(cat.id); setCurrentPage(1); }}
-                      className={`w-full text-left text-sm py-2 px-3 rounded-lg transition-all flex justify-between items-center ${
+                      className={`w-full text-left text-xs py-2 px-3 rounded-lg transition-all flex justify-between items-center font-sans ${
                         selectedCategory === cat.id 
-                          ? 'bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 font-semibold' 
-                          : 'hover:bg-slate-800/50 text-slate-400 hover:text-slate-200'
+                          ? 'bg-neutral-900 text-white font-bold' 
+                          : 'hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900'
                       }`}
                     >
                       <span>{cat.name}</span>
                     </button>
                     {/* Render subcategories if category is active or parent */}
                     {cat.subcategories && cat.subcategories.length > 0 && (
-                      <div className="pl-4 space-y-1">
+                      <div className="pl-3 space-y-1">
                         {cat.subcategories.map(sub => (
                           <button
                             key={sub.id}
                             onClick={() => { setSelectedCategory(sub.id); setCurrentPage(1); }}
-                            className={`w-full text-left text-xs py-1.5 px-3 rounded-md transition-all ${
+                            className={`w-full text-left text-[11px] py-1 px-3 rounded-md transition-all font-sans ${
                               selectedCategory === sub.id 
-                                ? 'bg-indigo-600/10 text-indigo-400 font-semibold' 
-                                : 'hover:bg-slate-850 text-slate-500 hover:text-slate-300'
+                                ? 'bg-neutral-100 text-neutral-800 font-bold' 
+                                : 'hover:bg-neutral-50 text-neutral-500 hover:text-neutral-700'
                             }`}
                           >
                             • {sub.name}
@@ -473,27 +542,27 @@ const ProductList: React.FC = () => {
 
             {/* Price Range Filter */}
             <div className="mb-6">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Price Range ($)</label>
+              <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-2 block font-sans">Price Range ($)</label>
               <div className="flex gap-2.5 items-center">
                 <input
                   type="number"
                   placeholder="Min"
                   value={minPrice}
                   onChange={(e) => setMinPrice(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-slate-800 rounded-lg py-2 px-3 text-xs focus:outline-none focus:border-indigo-500/80 text-slate-100"
+                  className="w-full bg-white border border-neutral-300 rounded-lg py-2 px-3 text-xs focus:outline-none focus:border-neutral-500 text-neutral-800 font-sans"
                 />
-                <span className="text-slate-600">-</span>
+                <span className="text-neutral-400">-</span>
                 <input
                   type="number"
                   placeholder="Max"
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-slate-800 rounded-lg py-2 px-3 text-xs focus:outline-none focus:border-indigo-500/80 text-slate-100"
+                  className="w-full bg-white border border-neutral-300 rounded-lg py-2 px-3 text-xs focus:outline-none focus:border-neutral-500 text-neutral-800 font-sans"
                 />
               </div>
               <button
                 onClick={() => { setCurrentPage(1); fetchProducts(); }}
-                className="w-full mt-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg text-xs transition-colors shadow-md shadow-indigo-600/10 cursor-pointer"
+                className="w-full mt-3 bg-black hover:bg-neutral-850 text-white font-bold py-2 rounded-lg text-xs transition-colors shadow-sm cursor-pointer font-sans"
               >
                 Apply Range
               </button>
@@ -504,70 +573,73 @@ const ProductList: React.FC = () => {
           <div className="flex-1">
             
             {/* Sorting & Filter toggle header */}
-            <div className="bg-slate-900/30 border border-slate-800/60 rounded-xl p-4 mb-6 flex flex-wrap justify-between items-center gap-4">
-              <div className="text-sm text-slate-400">
-                Showing <span className="text-slate-200 font-bold">{products.length}</span> of{' '}
-                <span className="text-slate-200 font-bold">{totalProducts}</span> Products
+            <div className="bg-neutral-50 border border-neutral-200/80 rounded-xl p-4 mb-6 flex flex-wrap justify-between items-center gap-4">
+              <div className="text-xs text-neutral-500 font-sans">
+                Showing <span className="text-neutral-800 font-bold">{products.length}</span> of{' '}
+                <span className="text-neutral-800 font-bold">{totalProducts}</span> Products
               </div>
 
               <div className="flex items-center gap-3">
                 {/* Mobile Filter Toggle */}
                 <button
                   onClick={() => setShowMobileFilters(true)}
-                  className="lg:hidden bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 py-2 px-4 rounded-xl text-xs font-medium flex items-center gap-2 cursor-pointer"
+                  className="lg:hidden bg-white hover:bg-neutral-50 border border-neutral-200 text-neutral-700 py-2 px-4 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer font-sans"
                 >
                   <SlidersHorizontal size={14} /> Filter
                 </button>
 
                 {/* Sort Dropdown */}
-                <div className="flex items-center gap-2 bg-slate-850 border border-slate-800 rounded-xl py-2 px-3 text-xs">
-                  <ArrowUpDown size={14} className="text-slate-400" />
+                <div className="flex items-center gap-2 bg-white border border-neutral-200 rounded-xl py-2 px-3 text-xs font-sans">
+                  <ArrowUpDown size={14} className="text-neutral-400" />
                   <select
                     value={sort}
                     onChange={(e) => { setSort(e.target.value); setCurrentPage(1); }}
-                    className="bg-transparent border-none text-slate-200 focus:outline-none pr-6 cursor-pointer"
+                    className="bg-transparent border-none text-neutral-700 focus:outline-none pr-6 cursor-pointer font-bold"
                   >
-                    <option value="newest" className="bg-slate-900">Newest Arrival</option>
-                    <option value="price_asc" className="bg-slate-900">Price: Low to High</option>
-                    <option value="price_desc" className="bg-slate-900">Price: High to Low</option>
+                    <option value="newest" className="bg-white">Newest Arrival</option>
+                    <option value="price_asc" className="bg-white">Price: Low to High</option>
+                    <option value="price_desc" className="bg-white">Price: High to Low</option>
                   </select>
                 </div>
               </div>
-            </div>            {/* Products Grid */}
+            </div>
+
+            {/* Products Grid */}
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="bg-slate-900/30 border border-slate-850 rounded-2xl overflow-hidden shadow-lg flex flex-col h-full animate-shimmer">
-                    <div className="relative aspect-[4/5] bg-slate-900/60 overflow-hidden w-full"></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="bg-neutral-50 border border-neutral-150 rounded-2xl overflow-hidden shadow-sm flex flex-col h-full animate-shimmer">
+                    <div className="relative aspect-[4/5] bg-neutral-100 overflow-hidden w-full"></div>
                     <div className="p-5 flex-1 flex flex-col space-y-3">
-                      <div className="h-3 bg-slate-850 rounded w-1/3"></div>
-                      <div className="h-5 bg-slate-800/40 rounded w-3/4"></div>
-                      <div className="h-3.5 bg-slate-800/30 rounded w-1/2"></div>
-                      <div className="pt-3 border-t border-slate-850 flex justify-between items-center mt-auto">
-                        <div className="h-5 bg-slate-800/40 rounded w-1/4"></div>
-                        <div className="h-3 bg-slate-850 rounded w-1/3"></div>
+                      <div className="h-3 bg-neutral-200 rounded w-1/3"></div>
+                      <div className="h-5 bg-neutral-200/60 rounded w-3/4"></div>
+                      <div className="h-3.5 bg-neutral-200/40 rounded w-1/2"></div>
+                      <div className="pt-3 border-t border-neutral-200 flex justify-between items-center mt-auto">
+                        <div className="h-5 bg-neutral-200/60 rounded w-1/4"></div>
+                        <div className="h-3 bg-neutral-200 rounded w-1/3"></div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : products.length === 0 ? (
-              <div className="min-h-[400px] bg-slate-900/10 border border-dashed border-slate-800 rounded-2xl flex flex-col justify-center items-center p-8 text-center">
-                <ShoppingBag size={48} className="text-slate-600 mb-4" />
-                <h3 className="text-xl font-bold text-slate-300">No Products Found</h3>
-                <p className="text-slate-500 max-w-sm text-sm mt-1">
+              <div className="min-h-[400px] bg-neutral-50 border border-dashed border-neutral-250 rounded-2xl flex flex-col justify-center items-center p-8 text-center">
+                <ShoppingBag size={44} className="text-neutral-400 mb-4" />
+                <h3 className="text-lg font-bold text-neutral-700 font-sans">No Products Found</h3>
+                <p className="text-neutral-500 max-w-sm text-xs mt-1 leading-normal font-sans">
                   We couldn't find any items matching your selected criteria. Try adjusting filters or resetting the search.
                 </p>
                 <button
                   onClick={handleResetFilters}
-                  className="mt-6 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 text-xs px-6 py-2.5 rounded-xl transition-all cursor-pointer"
+                  className="mt-6 bg-black hover:bg-neutral-850 text-white text-xs font-bold px-6 py-2.5 rounded-xl transition-all cursor-pointer font-sans"
                 >
                   Clear All Filters
                 </button>
               </div>
             ) : (
               <div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {/* 4 columns Product Grid on desktop */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   <AnimatePresence mode="popLayout">
                     {products.map((prod) => {
                       const primaryImg = prod.images?.find(img => img.is_primary) || prod.images?.[0];
@@ -587,86 +659,92 @@ const ProductList: React.FC = () => {
                             exit={{ opacity: 0, scale: 0.95 }}
                             transition={{ duration: 0.3 }}
                             onClick={() => navigate(`/products/${prod.id}`)}
-                            className="bg-slate-900/40 backdrop-blur-xl border border-slate-850 hover:border-slate-700/80 hover:shadow-2xl hover:shadow-indigo-500/10 rounded-2xl overflow-hidden group cursor-pointer flex flex-col h-full transition-all duration-350"
+                            className="bg-white border border-neutral-200 hover:border-neutral-400 hover:shadow-lg rounded-2xl overflow-hidden group cursor-pointer flex flex-col h-full transition-all duration-300"
                           >
                             {/* Image container */}
-                            <div className="relative aspect-[4/5] bg-slate-950 overflow-hidden w-full">
+                            <div className="relative aspect-[4/5] bg-neutral-50 overflow-hidden w-full">
                               <img
                                 src={getImageUrl(primaryImg?.url)}
                                 alt={prod.name}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                               />
-                              {/* Featured tag */}
-                              {prod.is_featured && (
-                                <span className="absolute top-3 left-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md z-10">
-                                  Featured
+                              
+                              {/* Badges on top-left */}
+                              <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+                                <span className="bg-black text-white text-[9px] font-extrabold uppercase tracking-widest w-9 h-9 rounded-full flex items-center justify-center shadow-md">
+                                  NEW
                                 </span>
-                              )}
+                                {prod.compare_at_price && (
+                                  <span className="bg-[#f0a500] text-white text-[9px] font-extrabold uppercase tracking-widest w-9 h-9 rounded-full flex items-center justify-center shadow-md">
+                                    {Math.round((1 - parseFloat(prod.price as any) / parseFloat(prod.compare_at_price as any)) * 100)}%
+                                  </span>
+                                )}
+                              </div>
                               
                               {/* Wishlist Heart Toggle */}
                               <button
                                 onClick={(e) => handleToggleWishlist(e, prod.id)}
-                                className="absolute top-3 right-3 p-2 bg-slate-950/70 border border-slate-800/80 hover:bg-slate-900 rounded-full text-slate-400 hover:text-red-500 transition-all cursor-pointer z-30 group/heart"
+                                className="absolute top-3 right-3 p-2 bg-white/90 border border-neutral-200 hover:bg-white rounded-full text-neutral-400 hover:text-red-500 shadow-sm transition-all cursor-pointer z-30 group/heart"
                                 title="Add to Wishlist"
                               >
                                 <Heart 
-                                  size={15} 
+                                  size={14} 
                                   className={`transition-all duration-350 ${
                                     isInWishlist(prod.id) 
                                       ? "fill-red-500 text-red-500 scale-110" 
-                                      : "text-slate-400 group-hover/heart:scale-110"
+                                      : "text-neutral-400 group-hover/heart:scale-110"
                                   }`} 
                                 />
                               </button>
  
                               {/* Stock status tag */}
                               {totalStock === 0 && (
-                                <span className="absolute top-14 right-3 bg-red-600/90 text-white text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md z-10">
+                                <span className="absolute top-14 right-3 bg-red-650/90 text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow-sm z-10">
                                   Out of Stock
                                 </span>
                               )}
  
                               {/* Quick View slide-up overlay */}
-                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-950/90 via-slate-950/50 to-transparent p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-350 ease-out flex justify-center z-20">
-                                <span className="bg-indigo-600 hover:bg-indigo-550 text-white font-bold text-xs py-2.5 px-5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 transition-all active:scale-95 cursor-pointer">
-                                  <Eye size={14} /> Quick View
+                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out flex justify-center z-20">
+                                <span className="bg-black hover:bg-neutral-850 text-white font-bold text-[11px] py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer font-sans uppercase tracking-widest">
+                                  <Eye size={12} /> Quick View
                                 </span>
                               </div>
                             </div>
  
                             {/* Info panel */}
-                            <div className="p-5 flex-1 flex flex-col">
-                              <span className="text-xs text-indigo-400 font-semibold mb-1 uppercase tracking-wider block">
+                            <div className="p-4 flex-1 flex flex-col text-left">
+                              <span className="text-[9px] text-[#f0a500] font-bold mb-1 uppercase tracking-wider block font-sans">
                                 {prod.category?.name || 'Uncategorized'}
                               </span>
-                              <h3 className="text-base font-bold text-slate-100 line-clamp-1 group-hover:text-indigo-300 transition-colors mb-2">
+                              <h3 className="text-xs font-bold text-neutral-700 line-clamp-1 group-hover:text-neutral-900 transition-colors mb-2 font-sans">
                                 {prod.name}
                               </h3>
  
                               {/* Color Swatches */}
                               {colors.length > 0 && (
-                                <div className="flex gap-1.5 mb-3 flex-wrap">
+                                <div className="flex gap-1 mb-2 flex-wrap">
                                   {colors.map((c, i) => (
                                     <div
                                       key={i}
                                       style={{ backgroundColor: c.hex || '' }}
                                       title={c.name || ''}
-                                      className="w-3.5 h-3.5 rounded-full border border-slate-950 ring-1 ring-slate-800"
+                                      className="w-3.5 h-3.5 rounded-full border border-neutral-300 ring-1 ring-neutral-100"
                                     ></div>
                                   ))}
                                 </div>
                               )}
  
-                              <div className="mt-auto pt-3 border-t border-slate-850 flex justify-between items-center">
-                                <div>
-                                  <span className="text-lg font-bold text-slate-100">${parseFloat(prod.price as any).toFixed(2)}</span>
+                              <div className="mt-auto pt-3 border-t border-neutral-100 flex items-center justify-between">
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-bold text-neutral-850 font-sans">{formatLKR(prod.price)}</span>
                                   {prod.compare_at_price && (
-                                    <span className="text-xs line-through text-slate-500 ml-2">
-                                      ${parseFloat(prod.compare_at_price as any).toFixed(2)}
+                                    <span className="text-[10px] line-through text-neutral-400 mt-0.5">
+                                      {formatLKR(prod.compare_at_price)}
                                     </span>
                                   )}
                                 </div>
-                                <span className="text-[10px] text-slate-550 font-medium uppercase tracking-wider">
+                                <span className="text-[8px] text-neutral-450 font-bold uppercase tracking-wider font-sans">
                                   {totalStock > 0 ? `${totalStock} in stock` : 'Sold Out'}
                                 </span>
                               </div>
@@ -680,13 +758,13 @@ const ProductList: React.FC = () => {
 
                 {/* Collaborative Recommendations Shelf */}
                 {!collabLoading && collabRecs.length > 0 && (
-                  <ScrollAnimate className="mt-16 pt-12 border-t border-slate-900 text-left space-y-8">
+                  <ScrollAnimate className="mt-16 pt-12 border-t border-neutral-200 text-left space-y-8">
                     <div>
-                      <span className="text-xs text-indigo-400 font-extrabold uppercase tracking-widest flex items-center gap-1.5">
+                      <span className="text-xs text-[#f0a500] font-extrabold uppercase tracking-widest flex items-center gap-1.5 font-sans">
                         <Sparkles size={12} className="animate-pulse" /> Personalized Curation
                       </span>
-                      <h2 className="text-xl font-bold uppercase tracking-wider text-slate-100 mt-1">Recommended For You</h2>
-                      <p className="text-slate-500 text-xs mt-1">Custom tailoring recommendations curated from your style profile and purchases</p>
+                      <h2 className="text-xl font-serif font-bold uppercase tracking-wider text-neutral-800 mt-1">Recommended For You</h2>
+                      <p className="text-neutral-500 text-xs mt-1 font-sans">Custom tailoring recommendations curated from your style profile and purchases</p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
@@ -696,22 +774,22 @@ const ProductList: React.FC = () => {
                           <div
                             key={prod.id}
                             onClick={() => { navigate(`/products/${prod.id}`); window.scrollTo(0, 0); }}
-                            className="bg-slate-900/40 backdrop-blur-md border border-slate-850 hover:border-slate-700 rounded-2xl overflow-hidden shadow-lg group cursor-pointer flex flex-col h-full transition-all duration-300 hover:-translate-y-1.5"
+                            className="bg-white border border-neutral-205 hover:border-neutral-400 hover:shadow-lg rounded-2xl overflow-hidden group cursor-pointer flex flex-col h-full transition-all duration-300"
                           >
-                            <div className="relative aspect-[4/5] bg-slate-950 overflow-hidden w-full">
+                            <div className="relative aspect-[4/5] bg-neutral-50 overflow-hidden w-full">
                               <img
                                 src={getImageUrl(primaryImg?.url)}
                                 alt={prod.name}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                                className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500 ease-out"
                               />
                             </div>
-                            <div className="p-4 flex flex-col flex-1">
-                              <h3 className="text-sm font-bold text-slate-200 line-clamp-1 group-hover:text-indigo-400 transition-colors">
+                            <div className="p-4 flex flex-col flex-1 text-left">
+                              <h3 className="text-xs font-bold text-neutral-700 line-clamp-1 group-hover:text-neutral-900 transition-colors font-sans">
                                 {prod.name}
                               </h3>
-                              <div className="mt-auto pt-2 border-t border-slate-850/40 flex justify-between items-center text-xs">
-                                <span className="font-extrabold text-slate-100">${parseFloat(prod.price as any).toFixed(2)}</span>
-                                <span className="text-[10px] text-slate-550 font-bold uppercase tracking-wider">View Item →</span>
+                              <div className="mt-auto pt-2 border-t border-neutral-100 flex justify-between items-center text-xs">
+                                <span className="font-bold text-neutral-800 font-sans">{formatLKR(prod.price)}</span>
+                                <span className="text-[9px] text-neutral-450 font-bold uppercase tracking-wider font-sans">View Item →</span>
                               </div>
                             </div>
                           </div>
@@ -727,7 +805,7 @@ const ProductList: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                       disabled={currentPage === 1}
-                      className="bg-slate-900 border border-slate-800 hover:border-slate-700 disabled:opacity-50 disabled:hover:border-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer"
+                      className="bg-white border border-neutral-300 hover:border-neutral-400 disabled:opacity-50 disabled:hover:border-neutral-300 text-neutral-700 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer font-sans"
                     >
                       Prev
                     </button>
@@ -735,10 +813,10 @@ const ProductList: React.FC = () => {
                       <button
                         key={i}
                         onClick={() => setCurrentPage(i + 1)}
-                        className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border cursor-pointer ${
+                        className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer font-sans ${
                           currentPage === i + 1
-                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20'
-                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                            ? 'bg-black border-black text-white shadow-md'
+                            : 'bg-white border-neutral-300 text-neutral-500 hover:border-neutral-400'
                         }`}
                       >
                         {i + 1}
@@ -747,7 +825,7 @@ const ProductList: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                       disabled={currentPage === totalPages}
-                      className="bg-slate-900 border border-slate-800 hover:border-slate-700 disabled:opacity-50 disabled:hover:border-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer"
+                      className="bg-white border border-neutral-300 hover:border-neutral-400 disabled:opacity-50 disabled:hover:border-neutral-300 text-neutral-700 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer font-sans"
                     >
                       Next
                     </button>
@@ -778,15 +856,15 @@ const ProductList: React.FC = () => {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'tween', duration: 0.3 }}
-              className="relative w-80 max-w-[85vw] h-full bg-slate-900 border-r border-slate-800 p-6 flex flex-col z-10 overflow-y-auto"
+              className="relative w-80 max-w-[85vw] h-full bg-white border-r border-neutral-200 p-6 flex flex-col z-10 overflow-y-auto"
             >
-              <div className="flex justify-between items-center pb-4 border-b border-slate-800 mb-6">
-                <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                  <SlidersHorizontal size={18} className="text-indigo-400" /> Filters
+              <div className="flex justify-between items-center pb-4 border-b border-neutral-200 mb-6">
+                <h2 className="text-base font-bold text-neutral-800 flex items-center gap-2 font-sans text-left">
+                  <SlidersHorizontal size={16} className="text-neutral-500" /> Filters
                 </h2>
                 <button
                   onClick={() => setShowMobileFilters(false)}
-                  className="text-slate-400 hover:text-slate-200"
+                  className="text-neutral-400 hover:text-neutral-600"
                 >
                   <X size={20} />
                 </button>
@@ -794,7 +872,7 @@ const ProductList: React.FC = () => {
 
               {/* Mobile Search */}
               <form onSubmit={handleSearchSubmit} className="mb-4 relative">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Search</label>
+                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-2 block font-sans text-left">Search</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -803,22 +881,22 @@ const ProductList: React.FC = () => {
                     onChange={(e) => handleSearchChange(e.target.value)}
                     onFocus={() => setShowSuggestions(suggestions.length > 0)}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                    className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2.5 pl-4 pr-10 text-sm focus:outline-none focus:border-indigo-500/80 text-slate-100 placeholder-slate-500"
+                    className="w-full bg-white border border-neutral-300 rounded-xl py-2.5 pl-4 pr-10 text-xs focus:outline-none focus:border-neutral-500 text-neutral-800 placeholder-neutral-400 font-sans"
                   />
-                  <button type="submit" className="absolute right-3 top-3 text-slate-400 hover:text-slate-200">
-                    <Search size={16} />
+                  <button type="submit" className="absolute right-3 top-3 text-neutral-450 hover:text-neutral-600">
+                    <Search size={14} />
                   </button>
                 </div>
 
                 {/* Autocomplete dropdown for mobile */}
                 {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-slate-950/95 backdrop-blur-md border border-slate-850 rounded-xl shadow-2xl overflow-hidden z-30 p-1 flex flex-col gap-0.5 max-h-40 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-250 rounded-xl shadow-lg overflow-hidden z-30 p-1 flex flex-col gap-0.5 max-h-40 overflow-y-auto">
                     {suggestions.map((sug, idx) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => { handleSuggestionClick(sug); setShowMobileFilters(false); }}
-                        className="text-left text-xs text-slate-350 hover:text-indigo-400 hover:bg-slate-900 px-3 py-2 rounded-lg cursor-pointer"
+                        className="text-left text-xs text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 px-3 py-2 rounded-lg cursor-pointer font-sans"
                       >
                         {sug}
                       </button>
@@ -828,23 +906,23 @@ const ProductList: React.FC = () => {
               </form>
 
               {/* AI Search Toggle Switch for mobile */}
-              <div className="mb-6 bg-indigo-950/10 border border-indigo-500/10 rounded-xl p-4 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-1">
-                    <Sparkles size={11} /> AI Semantic Search
+              <div className="mb-6 bg-neutral-50 border border-neutral-200 rounded-xl p-4 flex items-center justify-between">
+                <div className="text-left">
+                  <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1 font-sans">
+                    <Sparkles size={10} /> AI Semantic Search
                   </span>
-                  <p className="text-[9px] text-slate-450 mt-0.5 leading-normal">
+                  <p className="text-[9px] text-neutral-450 mt-0.5 leading-tight font-sans">
                     Vector search matching descriptions
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => { setIsAISearch(!isAISearch); setCurrentPage(1); }}
-                  className={`w-10 h-6 rounded-full p-1 transition-colors relative cursor-pointer ${
-                    isAISearch ? 'bg-indigo-600' : 'bg-slate-800'
+                  className={`w-9 h-5 rounded-full p-0.5 transition-colors relative cursor-pointer ${
+                    isAISearch ? 'bg-black' : 'bg-neutral-300'
                   }`}
                 >
-                  <div className={`w-4 h-4 bg-white rounded-full transition-transform ${
+                  <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${
                     isAISearch ? 'translate-x-4' : 'translate-x-0'
                   }`}></div>
                 </button>
@@ -852,14 +930,14 @@ const ProductList: React.FC = () => {
 
               {/* Mobile Categories */}
               <div className="mb-6">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 block">Categories</label>
-                <div className="space-y-1">
+                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-3 block font-sans text-left">Categories</label>
+                <div className="space-y-1.5 text-left">
                   <button
                     onClick={() => { setSelectedCategory(null); setCurrentPage(1); setShowMobileFilters(false); }}
-                    className={`w-full text-left text-sm py-2 px-3 rounded-lg transition-all ${
+                    className={`w-full text-left text-xs py-2 px-3 rounded-lg transition-all font-sans ${
                       selectedCategory === null 
-                        ? 'bg-indigo-600/10 text-indigo-400 font-semibold' 
-                        : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'
+                        ? 'bg-neutral-900 text-white font-bold' 
+                        : 'hover:bg-neutral-100 text-neutral-600 hover:text-neutral-905'
                     }`}
                   >
                     All Products
@@ -869,24 +947,24 @@ const ProductList: React.FC = () => {
                     <div key={cat.id} className="space-y-1">
                       <button
                         onClick={() => { setSelectedCategory(cat.id); setCurrentPage(1); setShowMobileFilters(false); }}
-                        className={`w-full text-left text-sm py-2 px-3 rounded-lg transition-all ${
+                        className={`w-full text-left text-xs py-2 px-3 rounded-lg transition-all font-sans ${
                           selectedCategory === cat.id 
-                            ? 'bg-indigo-600/10 text-indigo-400 font-semibold' 
-                            : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'
+                            ? 'bg-neutral-900 text-white font-bold' 
+                            : 'hover:bg-neutral-100 text-neutral-600 hover:text-neutral-905'
                         }`}
                       >
                         {cat.name}
                       </button>
                       {cat.subcategories && cat.subcategories.length > 0 && (
-                        <div className="pl-4 space-y-1">
+                        <div className="pl-3 space-y-1">
                           {cat.subcategories.map(sub => (
                             <button
                               key={sub.id}
                               onClick={() => { setSelectedCategory(sub.id); setCurrentPage(1); setShowMobileFilters(false); }}
-                              className={`w-full text-left text-xs py-1.5 px-3 rounded-md transition-all ${
+                              className={`w-full text-left text-[11px] py-1 px-3 rounded-md transition-all font-sans ${
                                 selectedCategory === sub.id 
-                                  ? 'bg-indigo-600/10 text-indigo-400 font-semibold' 
-                                  : 'hover:bg-slate-850 text-slate-500 hover:text-slate-300'
+                                  ? 'bg-neutral-100 text-neutral-805 font-bold' 
+                                  : 'hover:bg-neutral-50 text-neutral-500 hover:text-neutral-700'
                               }`}
                             >
                               • {sub.name}
@@ -901,37 +979,37 @@ const ProductList: React.FC = () => {
 
               {/* Mobile Price */}
               <div className="mb-6">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Price Range ($)</label>
+                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-2 block font-sans text-left">Price Range ($)</label>
                 <div className="flex gap-2 items-center">
                   <input
                     type="number"
                     placeholder="Min"
                     value={minPrice}
                     onChange={(e) => setMinPrice(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-850 rounded-lg py-2 px-3 text-xs focus:outline-none focus:border-indigo-500/80 text-slate-100"
+                    className="w-full bg-white border border-neutral-300 rounded-lg py-2 px-3 text-xs focus:outline-none focus:border-neutral-500 text-neutral-800 font-sans"
                   />
-                  <span className="text-slate-600">-</span>
+                  <span className="text-neutral-400">-</span>
                   <input
                     type="number"
                     placeholder="Max"
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-850 rounded-lg py-2 px-3 text-xs focus:outline-none focus:border-indigo-500/80 text-slate-100"
+                    className="w-full bg-white border border-neutral-300 rounded-lg py-2 px-3 text-xs focus:outline-none focus:border-neutral-500 text-neutral-800 font-sans"
                   />
                 </div>
               </div>
 
               {/* Apply & Reset Buttons */}
-              <div className="mt-auto space-y-2.5 pt-4 border-t border-slate-800">
+              <div className="mt-auto space-y-2.5 pt-4 border-t border-neutral-200">
                 <button
                   onClick={() => { setCurrentPage(1); fetchProducts(); setShowMobileFilters(false); }}
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl text-xs transition-colors shadow-lg cursor-pointer"
+                  className="w-full bg-black hover:bg-neutral-850 text-white font-bold py-3 rounded-xl text-xs transition-colors shadow-md cursor-pointer font-sans"
                 >
                   Apply Filters
                 </button>
                 <button
                   onClick={() => { handleResetFilters(); setShowMobileFilters(false); }}
-                  className="w-full bg-slate-950 border border-slate-850 hover:bg-slate-850 text-slate-400 hover:text-slate-200 font-medium py-3 rounded-xl text-xs transition-colors cursor-pointer"
+                  className="w-full bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-500 hover:text-neutral-700 font-bold py-3 rounded-xl text-xs transition-colors cursor-pointer font-sans"
                 >
                   Reset All
                 </button>

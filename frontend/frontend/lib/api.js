@@ -32,7 +32,14 @@ api.interceptors.response.use(
         
         if (newAccessToken) {
           // Retry the original request with the new access token
-          originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+          if (originalRequest.headers && typeof originalRequest.headers.set === 'function') {
+            originalRequest.headers.set('Authorization', `Bearer ${newAccessToken}`);
+          } else {
+            originalRequest.headers = {
+              ...originalRequest.headers,
+              'Authorization': `Bearer ${newAccessToken}`
+            };
+          }
           return api(originalRequest);
         }
       } catch (refreshError) {

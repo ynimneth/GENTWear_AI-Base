@@ -15,15 +15,14 @@ import { toast } from 'react-hot-toast';
 import { loadStripe } from '@stripe/stripe-js/pure';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import confetti from 'canvas-confetti';
+import { formatLKR } from './ProductList';
 
-// Stripe publishable key configuration
 const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51P00000000000000000000000000000000000000000000000000000000000000000000000000000000';
 
 let stripePromise: any = null;
 const getStripePromise = () => {
   if (!stripePromise && !stripeKey.startsWith('pk_test_51P0000')) {
     try {
-      // Disable telemetry/fraud detection requests to avoid ERR_BLOCKED_BY_CLIENT
       loadStripe.setLoadParameters({ advancedFraudSignals: false });
     } catch (e) {
       console.warn('Stripe load parameters warning:', e);
@@ -106,7 +105,7 @@ const MockPaymentForm: React.FC<{
 
     try {
       console.log('[Payment Sandbox] Simulating mock checkout processing...');
-      await new Promise((resolve) => setTimeout(resolve, 2500));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       
       try {
         await fetch('http://localhost:5000/payments/webhook', {
@@ -141,28 +140,24 @@ const MockPaymentForm: React.FC<{
       <div className="card-perspective w-full max-w-[340px] h-[210px] mx-auto mb-8 cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
         <div className={`card-inner w-full h-full relative rounded-2xl ${isFlipped ? 'is-flipped' : ''}`}>
           {/* Card Front */}
-          <div className="card-front absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between shadow-2xl overflow-hidden">
-            {/* Holographic glowing orb background pattern */}
-            <div className="absolute -top-12 -right-12 w-36 h-36 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
-            <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-purple-500/10 rounded-full blur-2xl pointer-events-none"></div>
+          <div className="card-front absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-950 border border-neutral-800 rounded-2xl p-6 flex flex-col justify-between shadow-2xl overflow-hidden text-white">
+            <div className="absolute -top-12 -right-12 w-36 h-36 bg-neutral-100/5 rounded-full blur-2xl pointer-events-none"></div>
 
             <div className="flex justify-between items-start">
-              {/* Chip and contact-less icon */}
               <div className="flex items-center gap-2">
-                <div className="w-10 h-7 bg-gradient-to-r from-amber-400 to-amber-200 rounded-md opacity-85 relative overflow-hidden flex flex-wrap p-1">
+                <div className="w-10 h-7 bg-gradient-to-r from-amber-450 to-amber-250 rounded-md opacity-85 relative overflow-hidden flex flex-wrap p-1">
                   <div className="w-full h-[1px] bg-slate-900/15"></div>
                   <div className="w-full h-[1px] bg-slate-900/15"></div>
                   <div className="w-1/2 h-full border-r border-slate-900/15"></div>
                 </div>
-                <div className="text-slate-500 rotate-90 scale-90">
+                <div className="text-neutral-400 rotate-90 scale-90">
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.66 0 3 1.34 3 3v1.71c.77.13 1.4.66 1.66 1.39l.24.64z"/>
                   </svg>
                 </div>
               </div>
 
-              {/* Brand Logo */}
-              <div className="font-black tracking-widest text-sm uppercase italic bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent flex flex-col items-end">
+              <div className="font-black tracking-widest text-sm uppercase italic bg-gradient-to-r from-neutral-100 to-neutral-300 bg-clip-text text-transparent flex flex-col items-end">
                 {cardType === 'visa' && <span className="text-blue-400 font-extrabold not-italic text-lg">VISA</span>}
                 {cardType === 'mastercard' && (
                   <div className="flex items-center -space-x-2">
@@ -171,27 +166,26 @@ const MockPaymentForm: React.FC<{
                   </div>
                 )}
                 {cardType === 'amex' && <span className="text-cyan-400 font-extrabold not-italic text-sm">AMEX</span>}
-                {cardType === 'generic' && <span className="text-[10px] tracking-widest font-semibold text-slate-400">GENTWEAR</span>}
+                {cardType === 'generic' && <span className="text-[10px] tracking-widest font-semibold text-neutral-400 font-sans">GENTWEAR</span>}
               </div>
             </div>
 
-            {/* Card Number */}
             <div className="text-center py-2">
-              <span className="font-mono text-lg tracking-[0.2em] text-slate-100 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
+              <span className="font-mono text-lg tracking-[0.2em] text-neutral-100 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
                 {cardNumber || '•••• •••• •••• ••••'}
               </span>
             </div>
 
             <div className="flex justify-between items-end">
               <div className="flex flex-col text-left">
-                <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Cardholder Name</span>
-                <span className="font-mono text-xs tracking-wider text-slate-200 uppercase truncate max-w-[170px]">
+                <span className="text-[9px] uppercase tracking-wider text-neutral-500 font-bold">Cardholder Name</span>
+                <span className="font-mono text-xs tracking-wider text-neutral-200 uppercase truncate max-w-[170px]">
                   {cardName || 'JOHN DOE'}
                 </span>
               </div>
               <div className="flex flex-col text-right">
-                <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Expires</span>
-                <span className="font-mono text-xs tracking-wider text-slate-200">
+                <span className="text-[9px] uppercase tracking-wider text-neutral-500 font-bold">Expires</span>
+                <span className="font-mono text-xs tracking-wider text-neutral-200">
                   {cardExpiry || 'MM/YY'}
                 </span>
               </div>
@@ -199,24 +193,24 @@ const MockPaymentForm: React.FC<{
           </div>
 
           {/* Card Back */}
-          <div className="card-back absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 border border-slate-800 rounded-2xl py-6 flex flex-col justify-between shadow-2xl overflow-hidden">
-            <div className="w-full h-11 bg-slate-950 mt-1"></div>
+          <div className="card-back absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-950 border border-neutral-800 rounded-2xl py-6 flex flex-col justify-between shadow-2xl overflow-hidden text-white">
+            <div className="w-full h-11 bg-neutral-950 mt-1"></div>
             
             <div className="px-6 flex flex-col gap-2">
-              <span className="text-[8px] uppercase tracking-widest text-slate-500 text-left font-bold pl-1">Authorized Signature</span>
-              <div className="w-full h-9 bg-slate-100/90 rounded-md flex items-center justify-between px-3 overflow-hidden">
+              <span className="text-[8px] uppercase tracking-widest text-neutral-500 text-left font-bold pl-1">Authorized Signature</span>
+              <div className="w-full h-9 bg-neutral-100/90 rounded-md flex items-center justify-between px-3 overflow-hidden">
                 <div className="w-3/4 h-full bg-[linear-gradient(45deg,rgba(0,0,0,0.02)_25%,transparent_25%,transparent_50%,rgba(0,0,0,0.02)_50%,rgba(0,0,0,0.02)_75%,transparent_75%,transparent)] bg-[size:10px_10px] flex items-center">
-                  <span className="font-serif italic text-slate-700 text-sm opacity-60 tracking-wider truncate max-w-[120px]">
+                  <span className="font-serif italic text-neutral-800 text-sm opacity-60 tracking-wider truncate max-w-[120px]">
                     {cardName}
                   </span>
                 </div>
-                <span className="font-mono text-xs text-slate-950 font-bold italic tracking-wider">
+                <span className="font-mono text-xs text-neutral-950 font-bold italic tracking-wider">
                   {cardCvc || '•••'}
                 </span>
               </div>
             </div>
 
-            <div className="px-6 text-[7px] text-slate-500 leading-normal text-left">
+            <div className="px-6 text-[7px] text-neutral-500 leading-normal text-left">
               This is a development sandbox credit card mockup. Payments simulated using this card are for testing purposes only and do not charge real financial institutions.
             </div>
           </div>
@@ -224,16 +218,16 @@ const MockPaymentForm: React.FC<{
       </div>
 
       {/* Input Fields */}
-      <div className="bg-slate-950/60 border border-slate-850 p-6 rounded-2xl space-y-4">
+      <div className="bg-neutral-50 border border-neutral-200 p-6 rounded-2xl space-y-4">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sandbox Payment (No Real Charge)</span>
-          <span className="text-xs text-indigo-400 font-bold flex items-center gap-1">
+          <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Sandbox Payment (No Real Charge)</span>
+          <span className="text-xs text-[#f0a500] font-bold flex items-center gap-1">
             <ShieldCheck size={14} /> Sandbox Mode
           </span>
         </div>
 
-        <div>
-          <label className="text-xs text-slate-400 font-bold block mb-1">Cardholder Name</label>
+        <div className="text-left">
+          <label className="text-xs text-neutral-500 font-bold block mb-1">Cardholder Name</label>
           <input
             type="text"
             required
@@ -241,12 +235,12 @@ const MockPaymentForm: React.FC<{
             value={cardName}
             onFocus={() => setIsFlipped(false)}
             onChange={(e) => setCardName(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 text-slate-100"
+            className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-neutral-550 text-neutral-850"
           />
         </div>
 
-        <div>
-          <label className="text-xs text-slate-400 font-bold block mb-1">Card Number</label>
+        <div className="text-left">
+          <label className="text-xs text-neutral-500 font-bold block mb-1">Card Number</label>
           <input
             type="text"
             required
@@ -254,13 +248,13 @@ const MockPaymentForm: React.FC<{
             value={cardNumber}
             onFocus={() => setIsFlipped(false)}
             onChange={handleCardNumberChange}
-            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 text-slate-100 font-mono tracking-widest"
+            className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-neutral-550 text-neutral-850 font-mono tracking-widest"
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 text-left">
           <div>
-            <label className="text-xs text-slate-400 font-bold block mb-1">Expiration Date</label>
+            <label className="text-xs text-neutral-500 font-bold block mb-1">Expiration Date</label>
             <input
               type="text"
               required
@@ -268,11 +262,11 @@ const MockPaymentForm: React.FC<{
               value={cardExpiry}
               onFocus={() => setIsFlipped(false)}
               onChange={handleExpiryChange}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 text-slate-100 font-mono"
+              className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-neutral-550 text-neutral-850 font-mono"
             />
           </div>
           <div>
-            <label className="text-xs text-slate-400 font-bold block mb-1">CVC Code</label>
+            <label className="text-xs text-neutral-500 font-bold block mb-1">CVC Code</label>
             <input
               type="password"
               required
@@ -281,12 +275,12 @@ const MockPaymentForm: React.FC<{
               onFocus={() => setIsFlipped(true)}
               onBlur={() => setIsFlipped(false)}
               onChange={handleCvcChange}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 text-slate-100 font-mono"
+              className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-neutral-550 text-neutral-850 font-mono"
             />
           </div>
         </div>
 
-        <div className="flex items-start gap-2.5 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/20 text-xs text-indigo-300">
+        <div className="flex items-start gap-2.5 p-3 rounded-lg bg-neutral-100 border border-neutral-200 text-xs text-neutral-600 text-left">
           <Info size={14} className="shrink-0 mt-0.5" />
           <p>
             <strong>Sandbox Active:</strong> You can enter any 16-digit card number and expiry details to proceed. We recommend using <code>4111 1111 1111 1111</code> (test Visa).
@@ -299,21 +293,21 @@ const MockPaymentForm: React.FC<{
           type="button"
           onClick={onBack}
           disabled={isProcessing}
-          className="flex-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 font-bold py-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-98 disabled:opacity-50 text-sm"
+          className="flex-1 bg-white hover:bg-neutral-50 border border-neutral-300 text-neutral-700 font-bold py-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-98 disabled:opacity-50 text-sm"
         >
           <ArrowLeft size={16} /> Back
         </button>
         <button
           type="submit"
           disabled={isProcessing}
-          className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-600/15 cursor-pointer flex items-center justify-center gap-2 active:scale-98 disabled:opacity-50 text-sm"
+          className="flex-1 bg-black hover:bg-neutral-850 text-white font-bold py-3.5 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 active:scale-98 disabled:opacity-50 text-sm"
         >
           {isProcessing ? (
             <>
               <Loader2 className="animate-spin" size={16} /> Processing...
             </>
           ) : (
-            `Pay $${total.toFixed(2)}`
+            `Pay ${formatLKR(total)}`
           )}
         </button>
       </div>
@@ -344,13 +338,10 @@ const PaymentForm: React.FC<{
     setIsProcessing(true);
 
     try {
-      // Check if it is a sandbox mock secret
       if (clientSecret.startsWith('pi_mock_')) {
         console.log('[Payment Sandbox] Simulating mock checkout processing...');
-        await new Promise((resolve) => setTimeout(resolve, 2500));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         
-        // Call local server webhook directly or mock success since webhook is mock
-        // For mock order, we'll hit our payment webhook to confirm payment status
         try {
           await fetch('http://localhost:5000/payments/webhook', {
             method: 'POST',
@@ -375,7 +366,6 @@ const PaymentForm: React.FC<{
         return;
       }
 
-      // Real Stripe payment confirmation
       const cardElement = elements.getElement(CardElement);
       if (!cardElement) {
         toast.error('Credit card details form is missing.');
@@ -409,26 +399,26 @@ const PaymentForm: React.FC<{
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-slate-950/60 border border-slate-850 p-6 rounded-2xl">
+      <div className="bg-neutral-50 border border-neutral-200 p-6 rounded-2xl text-left">
         <div className="flex justify-between items-center mb-6">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Credit or Debit Card</span>
-          <span className="text-xs text-indigo-400 font-bold flex items-center gap-1">
-            <ShieldCheck size={14} /> 256-bit Encrypted
+          <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Credit or Debit Card</span>
+          <span className="text-xs text-neutral-500 font-bold flex items-center gap-1">
+            <ShieldCheck size={14} className="text-neutral-500" /> 256-bit Encrypted
           </span>
         </div>
 
-        <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl">
+        <div className="p-4 bg-white border border-neutral-300 rounded-xl">
           <CardElement
             options={{
               style: {
                 base: {
-                  color: '#f8fafc',
-                  iconColor: '#6366f1',
+                  color: '#1c1c1c',
+                  iconColor: '#000000',
                   fontFamily: 'Inter, system-ui, sans-serif',
                   fontSmoothing: 'antialiased',
                   fontSize: '15px',
                   '::placeholder': {
-                    color: '#64748b'
+                    color: '#9ca3af'
                   }
                 },
                 invalid: {
@@ -441,7 +431,7 @@ const PaymentForm: React.FC<{
         </div>
         
         {clientSecret.startsWith('pi_mock_') && (
-          <div className="mt-4 flex items-start gap-2.5 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/20 text-xs text-indigo-300">
+          <div className="mt-4 flex items-start gap-2.5 p-3 rounded-lg bg-neutral-100 border border-neutral-200 text-xs text-neutral-600">
             <Info size={14} className="shrink-0 mt-0.5" />
             <p>
               <strong>Sandbox Mode Active:</strong> Stripe keys are missing or invalid, so a mock PaymentIntent is used. Feel free to input any dummy digits to proceed.
@@ -455,21 +445,21 @@ const PaymentForm: React.FC<{
           type="button"
           onClick={onBack}
           disabled={isProcessing}
-          className="flex-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 font-bold py-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-98 disabled:opacity-50"
+          className="flex-1 bg-white hover:bg-neutral-50 border border-neutral-300 text-neutral-700 font-bold py-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-98 disabled:opacity-50"
         >
           <ArrowLeft size={16} /> Back
         </button>
         <button
           type="submit"
           disabled={isProcessing || !stripe}
-          className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-600/15 cursor-pointer flex items-center justify-center gap-2 active:scale-98 disabled:opacity-50"
+          className="flex-1 bg-black hover:bg-neutral-850 text-white font-bold py-3.5 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 active:scale-98 disabled:opacity-50"
         >
           {isProcessing ? (
             <>
               <Loader2 className="animate-spin" size={16} /> Processing...
             </>
           ) : (
-            `Pay $${total.toFixed(2)}`
+            `Pay ${formatLKR(total)}`
           )}
         </button>
       </div>
@@ -552,7 +542,6 @@ const Checkout: React.FC = () => {
   const handleCreateAddress = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Quick validation
     const required = ['title', 'full_name', 'phone_number', 'address_line1', 'city', 'state', 'postal_code', 'country'];
     for (const field of required) {
       if (!addressForm[field as keyof typeof addressForm]) {
@@ -597,7 +586,6 @@ const Checkout: React.FC = () => {
     setIsSubmittingOrder(true);
     
     try {
-      // 1. Post to create order endpoint
       const orderRes = await createOrder({ address_id: selectedAddressId });
       
       if (!orderRes.success) {
@@ -608,7 +596,6 @@ const Checkout: React.FC = () => {
 
       setPlacedOrder(orderRes.order);
 
-      // 2. Fetch Payment Intent for order
       const intentRes = await createPaymentIntent(orderRes.order.id);
       if (!intentRes.success) {
         toast.error(intentRes.message);
@@ -617,9 +604,7 @@ const Checkout: React.FC = () => {
       }
 
       setClientSecret(intentRes.data.clientSecret);
-      setStep(3); // Go to Payment Step
-      
-      // Refresh cart context in store (should now be empty)
+      setStep(3);
       fetchCart();
     } catch (err: any) {
       toast.error(err.message || 'An error occurred during order routing');
@@ -629,8 +614,7 @@ const Checkout: React.FC = () => {
   };
 
   const triggerConfetti = () => {
-    // Blast confetti!
-    const duration = 4 * 1000;
+    const duration = 3 * 1000;
     const end = Date.now() + duration;
 
     (function frame() {
@@ -639,14 +623,14 @@ const Checkout: React.FC = () => {
         angle: 60,
         spread: 55,
         origin: { x: 0, y: 0.8 },
-        colors: ['#6366f1', '#8b5cf6', '#a855f7', '#f43f5e']
+        colors: ['#000000', '#f0a500', '#c1c1c1']
       });
       confetti({
         particleCount: 3,
         angle: 120,
         spread: 55,
         origin: { x: 1, y: 0.8 },
-        colors: ['#6366f1', '#8b5cf6', '#a855f7', '#f43f5e']
+        colors: ['#000000', '#f0a500', '#c1c1c1']
       });
 
       if (Date.now() < end) {
@@ -656,30 +640,25 @@ const Checkout: React.FC = () => {
   };
 
   const handlePaymentSuccess = () => {
-    setStep(4); // Go to Confirmation Step
+    setStep(4);
     triggerConfetti();
   };
 
-  // Find currently selected address
   const activeAddress = addresses.find((a: any) => a.id === selectedAddressId);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-12 px-6 relative overflow-hidden">
-      {/* Dynamic background glow */}
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-indigo-600/5 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-purple-600/5 rounded-full blur-[120px] pointer-events-none"></div>
-
+    <div className="min-h-screen bg-white text-neutral-850 py-12 px-6 relative overflow-hidden select-none font-sans">
       <div className="max-w-5xl mx-auto relative z-10">
         
         {/* Page Header */}
-        <div className="flex items-center justify-between border-b border-slate-850 pb-6 mb-10">
-          <div>
-            <h1 className="text-3xl font-black text-slate-100 tracking-wider uppercase">Secure Checkout</h1>
-            <p className="text-slate-450 text-xs mt-1">Complete your menswear purchase</p>
+        <div className="flex items-center justify-between border-b border-neutral-200 pb-6 mb-10">
+          <div className="text-left">
+            <h1 className="text-2xl font-serif font-bold text-neutral-900 tracking-wide">Secure Checkout</h1>
+            <p className="text-neutral-500 text-xs mt-1">Complete your menswear purchase</p>
           </div>
           <button 
             onClick={() => navigate('/products')} 
-            className="text-slate-400 hover:text-slate-200 text-xs font-bold border border-slate-800 bg-slate-900/40 hover:bg-slate-850 px-4 py-2.5 rounded-xl transition-all"
+            className="text-neutral-600 hover:text-neutral-800 text-xs font-bold border border-neutral-300 bg-white hover:bg-neutral-50 px-4 py-2.5 rounded-xl transition-all"
           >
             Cancel
           </button>
@@ -696,15 +675,15 @@ const Checkout: React.FC = () => {
             <div key={s.num} className="flex flex-col items-center">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border transition-all duration-300 ${
                 step === s.num
-                  ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/20 scale-105'
+                  ? 'bg-black border-black text-white shadow-md scale-105'
                   : step > s.num
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                    : 'bg-slate-900 border-slate-800 text-slate-500'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
+                    : 'bg-neutral-100 border-neutral-200 text-neutral-400'
               }`}>
                 {step > s.num ? '✓' : s.num}
               </div>
-              <span className={`text-[10px] uppercase font-bold tracking-widest mt-2 ${
-                step === s.num ? 'text-indigo-400' : step > s.num ? 'text-emerald-500' : 'text-slate-500'
+              <span className={`text-[9px] uppercase font-bold tracking-widest mt-2 ${
+                step === s.num ? 'text-black' : step > s.num ? 'text-emerald-600' : 'text-neutral-400'
               }`}>
                 {s.label}
               </span>
@@ -727,15 +706,15 @@ const Checkout: React.FC = () => {
                   exit={{ opacity: 0, x: 10 }}
                   className="space-y-6"
                 >
-                  <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-850 p-6 rounded-2xl shadow-xl">
+                  <div className="bg-neutral-50 border border-neutral-200 p-6 rounded-2xl shadow-sm">
                     <div className="flex justify-between items-center mb-6">
-                      <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                        <MapPin size={20} className="text-indigo-400" /> Shipping Address
+                      <h2 className="text-base font-bold text-neutral-800 flex items-center gap-2">
+                        <MapPin size={18} className="text-neutral-500" /> Shipping Address
                       </h2>
                       {!showNewAddressForm && (
                         <button
                           onClick={() => setShowNewAddressForm(true)}
-                          className="text-xs font-bold text-indigo-400 bg-indigo-500/5 hover:bg-indigo-500/10 border border-indigo-500/25 px-3 py-1.5 rounded-xl flex items-center gap-1 transition-all cursor-pointer"
+                          className="text-xs font-bold text-neutral-700 bg-white hover:bg-neutral-50 border border-neutral-300 px-3 py-1.5 rounded-xl flex items-center gap-1 transition-all cursor-pointer"
                         >
                           <Plus size={14} /> Add New Address
                         </button>
@@ -743,114 +722,122 @@ const Checkout: React.FC = () => {
                     </div>
 
                     {showNewAddressForm ? (
-                      <form onSubmit={handleCreateAddress} className="space-y-4">
+                      <form onSubmit={handleCreateAddress} className="space-y-4 text-left">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="text-xs text-slate-400 font-bold block mb-1">Address Label *</label>
+                            <label className="text-xs text-neutral-500 font-bold block mb-1">Address Label *</label>
                             <input
                               type="text"
                               name="title"
+                              required
                               placeholder="e.g. Home, Office"
                               value={addressForm.title}
                               onChange={handleAddressInputChange}
-                              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
+                              className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-neutral-500 text-neutral-850"
                             />
                           </div>
                           <div>
-                            <label className="text-xs text-slate-400 font-bold block mb-1">Full Name *</label>
+                            <label className="text-xs text-neutral-500 font-bold block mb-1">Full Name *</label>
                             <input
                               type="text"
                               name="full_name"
+                              required
                               placeholder="John Doe"
                               value={addressForm.full_name}
                               onChange={handleAddressInputChange}
-                              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
+                              className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-neutral-500 text-neutral-850"
                             />
                           </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="text-xs text-slate-400 font-bold block mb-1">Phone Number *</label>
+                            <label className="text-xs text-neutral-500 font-bold block mb-1">Phone Number *</label>
                             <input
                               type="text"
                               name="phone_number"
+                              required
                               placeholder="+1 555-0199"
                               value={addressForm.phone_number}
                               onChange={handleAddressInputChange}
-                              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
+                              className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-neutral-500 text-neutral-850"
                             />
                           </div>
                           <div>
-                            <label className="text-xs text-slate-400 font-bold block mb-1">Address Line 1 *</label>
+                            <label className="text-xs text-neutral-500 font-bold block mb-1">Address Line 1 *</label>
                             <input
                               type="text"
                               name="address_line1"
+                              required
                               placeholder="123 Main St"
                               value={addressForm.address_line1}
                               onChange={handleAddressInputChange}
-                              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
+                              className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-neutral-500 text-neutral-850"
                             />
                           </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="text-xs text-slate-400 font-bold block mb-1">Address Line 2 (Optional)</label>
+                            <label className="text-xs text-neutral-500 font-bold block mb-1">Address Line 2 (Optional)</label>
                             <input
                               type="text"
                               name="address_line2"
                               placeholder="Apt, Suite, Room"
                               value={addressForm.address_line2}
                               onChange={handleAddressInputChange}
-                              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
+                              className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-neutral-500 text-neutral-850"
                             />
                           </div>
                           <div>
-                            <label className="text-xs text-slate-400 font-bold block mb-1">City *</label>
+                            <label className="text-xs text-neutral-500 font-bold block mb-1">City *</label>
                             <input
                               type="text"
                               name="city"
-                              placeholder="New York"
+                              required
+                              placeholder="Colombo"
                               value={addressForm.city}
                               onChange={handleAddressInputChange}
-                              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
+                              className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-neutral-500 text-neutral-850"
                             />
                           </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           <div>
-                            <label className="text-xs text-slate-400 font-bold block mb-1">State / Region *</label>
+                            <label className="text-xs text-neutral-500 font-bold block mb-1">State / Region *</label>
                             <input
                               type="text"
                               name="state"
-                              placeholder="NY"
+                              required
+                              placeholder="Western"
                               value={addressForm.state}
                               onChange={handleAddressInputChange}
-                              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
+                              className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-neutral-500 text-neutral-850"
                             />
                           </div>
                           <div>
-                            <label className="text-xs text-slate-400 font-bold block mb-1">ZIP / Postal Code *</label>
+                            <label className="text-xs text-neutral-500 font-bold block mb-1">ZIP / Postal Code *</label>
                             <input
                               type="text"
                               name="postal_code"
+                              required
                               placeholder="10001"
                               value={addressForm.postal_code}
                               onChange={handleAddressInputChange}
-                              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
+                              className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-neutral-500 text-neutral-850"
                             />
                           </div>
                           <div>
-                            <label className="text-xs text-slate-400 font-bold block mb-1">Country *</label>
+                            <label className="text-xs text-neutral-500 font-bold block mb-1">Country *</label>
                             <input
                               type="text"
                               name="country"
-                              placeholder="United States"
+                              required
+                              placeholder="Sri Lanka"
                               value={addressForm.country}
                               onChange={handleAddressInputChange}
-                              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
+                              className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-neutral-500 text-neutral-850"
                             />
                           </div>
                         </div>
@@ -862,22 +849,22 @@ const Checkout: React.FC = () => {
                             id="is_default"
                             checked={addressForm.is_default}
                             onChange={handleAddressInputChange}
-                            className="w-4 h-4 accent-indigo-600 rounded bg-slate-950 border border-slate-800"
+                            className="w-4 h-4 rounded border-neutral-300 text-black focus:ring-black"
                           />
-                          <label htmlFor="is_default" className="text-xs text-slate-350 cursor-pointer">Set as default shipping address</label>
+                          <label htmlFor="is_default" className="text-xs text-neutral-500 cursor-pointer">Set as default shipping address</label>
                         </div>
 
-                        <div className="flex items-center gap-3 pt-4 border-t border-slate-850">
+                        <div className="flex items-center gap-3 pt-4 border-t border-neutral-200">
                           <button
                             type="button"
                             onClick={() => setShowNewAddressForm(false)}
-                            className="flex-1 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-400 font-bold py-2.5 rounded-xl text-xs cursor-pointer transition-all"
+                            className="flex-1 bg-white hover:bg-neutral-50 border border-neutral-300 text-neutral-500 font-bold py-2.5 rounded-xl text-xs cursor-pointer transition-all"
                           >
                             Cancel
                           </button>
                           <button
                             type="submit"
-                            className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs cursor-pointer transition-all shadow-md shadow-indigo-600/10"
+                            className="flex-1 bg-black hover:bg-neutral-850 text-white font-bold py-2.5 rounded-xl text-xs cursor-pointer transition-all shadow-sm"
                           >
                             Save Address
                           </button>
@@ -885,16 +872,16 @@ const Checkout: React.FC = () => {
                       </form>
                     ) : addressLoading ? (
                       <div className="py-12 flex justify-center items-center">
-                        <Loader2 className="animate-spin text-indigo-400" size={32} />
+                        <Loader2 className="animate-spin text-neutral-500" size={32} />
                       </div>
                     ) : addresses.length === 0 ? (
                       <div className="py-8 text-center flex flex-col justify-center items-center">
-                        <MapPin size={36} className="text-slate-650 mb-3" />
-                        <p className="text-slate-400 text-sm font-semibold">No addresses saved yet</p>
-                        <p className="text-slate-550 text-xs mt-1">Add your shipping details to get started.</p>
+                        <MapPin size={36} className="text-neutral-400 mb-3" />
+                        <p className="text-neutral-700 text-sm font-semibold">No addresses saved yet</p>
+                        <p className="text-neutral-450 text-xs mt-1">Add your shipping details to get started.</p>
                         <button
                           onClick={() => setShowNewAddressForm(true)}
-                          className="mt-4 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all"
+                          className="mt-4 bg-black hover:bg-neutral-850 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all"
                         >
                           Add Shipping Address
                         </button>
@@ -907,26 +894,26 @@ const Checkout: React.FC = () => {
                             onClick={() => setSelectedAddressId(addr.id)}
                             className={`p-4 rounded-xl border transition-all cursor-pointer text-left flex justify-between relative overflow-hidden group ${
                               selectedAddressId === addr.id
-                                ? 'bg-indigo-600/5 border-indigo-500 shadow-md shadow-indigo-500/5'
-                                : 'bg-slate-950/40 border-slate-850/60 hover:border-slate-800 hover:bg-slate-950/60'
+                                ? 'bg-neutral-100/30 border-black shadow-sm'
+                                : 'bg-white border-neutral-200 hover:border-neutral-350'
                             }`}
                           >
                             <div className="space-y-1">
                               <div className="flex items-center gap-2.5">
-                                <span className="text-sm font-bold text-slate-100">{addr.title}</span>
+                                <span className="text-sm font-bold text-neutral-800">{addr.title}</span>
                                 {addr.is_default && (
-                                  <span className="text-[9px] font-bold tracking-widest uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-1.5 py-0.5 rounded">
+                                  <span className="text-[8px] font-bold tracking-widest uppercase bg-neutral-100 text-neutral-600 border border-neutral-205 px-1.5 py-0.5 rounded font-sans">
                                     Default
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs font-semibold text-slate-300 mt-2 flex items-center gap-1.5">
-                                <User size={12} className="text-slate-500" /> {addr.full_name}
+                              <p className="text-xs font-bold text-neutral-700 mt-2 flex items-center gap-1.5">
+                                <User size={12} className="text-neutral-400" /> {addr.full_name}
                               </p>
-                              <p className="text-xs text-slate-450 mt-1 flex items-center gap-1.5">
-                                <Phone size={12} className="text-slate-500" /> {addr.phone_number}
+                              <p className="text-xs text-neutral-500 mt-1 flex items-center gap-1.5">
+                                <Phone size={12} className="text-neutral-400" /> {addr.phone_number}
                               </p>
-                              <p className="text-xs text-slate-400 mt-2 leading-relaxed pl-5">
+                              <p className="text-xs text-neutral-500 mt-2 leading-relaxed pl-5 font-sans">
                                 {addr.address_line1}
                                 {addr.address_line2 ? `, ${addr.address_line2}` : ''}<br/>
                                 {addr.city}, {addr.state} {addr.postal_code}, {addr.country}
@@ -935,10 +922,10 @@ const Checkout: React.FC = () => {
                             <div className="flex items-center">
                               <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
                                 selectedAddressId === addr.id
-                                  ? 'border-indigo-500 bg-indigo-600 text-white'
-                                  : 'border-slate-800 bg-slate-950'
+                                  ? 'border-black bg-black text-white'
+                                  : 'border-neutral-300 bg-white'
                               }`}>
-                                {selectedAddressId === addr.id && <span className="w-2 h-2 rounded-full bg-white"></span>}
+                                {selectedAddressId === addr.id && <span className="w-1.5 h-1.5 rounded-full bg-white"></span>}
                               </div>
                             </div>
                           </div>
@@ -950,7 +937,7 @@ const Checkout: React.FC = () => {
                   {!showNewAddressForm && addresses.length > 0 && (
                     <button
                       onClick={proceedToStep2}
-                      className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-600/10 cursor-pointer flex items-center justify-center gap-1 active:scale-98"
+                      className="w-full bg-black hover:bg-neutral-850 text-white font-bold py-3.5 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-1 active:scale-[0.98]"
                     >
                       Continue to Review <ChevronRight size={16} />
                     </button>
@@ -968,22 +955,22 @@ const Checkout: React.FC = () => {
                   className="space-y-6"
                 >
                   {/* Delivery Address Summary card */}
-                  <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-850 p-6 rounded-2xl shadow-xl text-left">
-                    <div className="flex justify-between items-center border-b border-slate-850 pb-4 mb-4">
-                      <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-                        <MapPin size={16} className="text-indigo-400" /> Delivery Shipping Details
+                  <div className="bg-neutral-50 border border-neutral-200 p-6 rounded-2xl shadow-sm text-left">
+                    <div className="flex justify-between items-center border-b border-neutral-200 pb-4 mb-4">
+                      <h3 className="text-xs font-bold text-neutral-700 flex items-center gap-2 uppercase tracking-wider">
+                        <MapPin size={15} className="text-neutral-500" /> Delivery Shipping Details
                       </h3>
                       <button 
                         onClick={() => setStep(1)} 
-                        className="text-xs font-bold text-indigo-400 hover:underline cursor-pointer"
+                        className="text-xs font-bold text-[#f0a500] hover:underline cursor-pointer font-sans"
                       >
                         Change
                       </button>
                     </div>
                     {activeAddress && (
-                      <div className="text-xs text-slate-400 space-y-1">
-                        <p className="font-bold text-slate-200 text-sm">{activeAddress.full_name}</p>
-                        <p className="text-slate-300">{activeAddress.phone_number}</p>
+                      <div className="text-xs text-neutral-600 space-y-1 font-sans">
+                        <p className="font-bold text-neutral-800 text-sm">{activeAddress.full_name}</p>
+                        <p>{activeAddress.phone_number}</p>
                         <p className="pt-1">{activeAddress.address_line1}{activeAddress.address_line2 ? `, ${activeAddress.address_line2}` : ''}</p>
                         <p>{activeAddress.city}, {activeAddress.state} {activeAddress.postal_code}</p>
                         <p>{activeAddress.country}</p>
@@ -992,8 +979,8 @@ const Checkout: React.FC = () => {
                   </div>
 
                   {/* Review terms alert */}
-                  <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-850 flex items-start gap-2.5 text-xs text-slate-400 leading-relaxed text-left">
-                    <Info size={16} className="text-indigo-400 shrink-0 mt-0.5" />
+                  <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200 flex items-start gap-2.5 text-xs text-neutral-500 leading-relaxed text-left">
+                    <Info size={16} className="text-neutral-500 shrink-0 mt-0.5" />
                     <p>
                       Please verify your shipping details and order summaries before confirming. Clicking "Confirm & Proceed to Payment" will deduct inventory levels from stock to reserve your items.
                     </p>
@@ -1004,14 +991,14 @@ const Checkout: React.FC = () => {
                     <button
                       onClick={() => setStep(1)}
                       disabled={isSubmittingOrder}
-                      className="flex-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 font-bold py-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 active:scale-98 disabled:opacity-50"
+                      className="flex-1 bg-white hover:bg-neutral-50 border border-neutral-300 text-neutral-650 font-bold py-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 active:scale-98 disabled:opacity-50 text-sm"
                     >
                       <ArrowLeft size={16} /> Edit Address
                     </button>
                     <button
                       onClick={handlePlaceOrder}
                       disabled={isSubmittingOrder}
-                      className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-600/15 cursor-pointer flex items-center justify-center gap-2 active:scale-98 disabled:opacity-50"
+                      className="flex-1 bg-black hover:bg-neutral-850 text-white font-bold py-3.5 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 active:scale-98 disabled:opacity-50 text-sm"
                     >
                       {isSubmittingOrder ? (
                         <>
@@ -1019,7 +1006,7 @@ const Checkout: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          Proceed to Payment <ChevronRight size={16} />
+                          Confirm & Pay <ChevronRight size={16} />
                         </>
                       )}
                     </button>
@@ -1036,12 +1023,12 @@ const Checkout: React.FC = () => {
                   exit={{ opacity: 0, x: 10 }}
                   className="space-y-6 text-left"
                 >
-                  <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-850 p-6 rounded-2xl shadow-xl">
-                    <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2 mb-2">
-                      <CreditCard size={20} className="text-indigo-400" /> Enter Payment Details
+                  <div className="bg-neutral-50 border border-neutral-200 p-6 rounded-2xl shadow-sm">
+                    <h2 className="text-base font-bold text-neutral-850 flex items-center gap-2 mb-1">
+                      <CreditCard size={18} className="text-neutral-500" /> Enter Payment Details
                     </h2>
-                    <p className="text-slate-400 text-xs mb-6">
-                      Payment for Order <strong className="text-slate-200 font-bold">#{placedOrder?.id}</strong> is required to finalize delivery.
+                    <p className="text-neutral-450 text-xs mb-6">
+                      Payment for Order <strong className="text-neutral-750 font-bold">#{placedOrder?.id}</strong> is required to finalize delivery.
                     </p>
 
                     {clientSecret && (
@@ -1075,47 +1062,47 @@ const Checkout: React.FC = () => {
                   key="step4"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="bg-slate-900/40 backdrop-blur-xl border border-slate-850 p-8 rounded-2xl shadow-2xl text-center space-y-6"
+                  className="bg-neutral-50 border border-neutral-200 p-8 rounded-2xl shadow-sm text-center space-y-6"
                 >
-                  <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto scale-110 mb-2 animate-pulse">
-                    <CheckCircle2 size={36} />
+                  <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto scale-110 mb-2 animate-pulse">
+                    <CheckCircle2 size={32} />
                   </div>
                   
                   <div>
-                    <h2 className="text-2xl font-black text-slate-100 uppercase tracking-wide">Order Confirmed!</h2>
-                    <p className="text-emerald-400 text-xs font-bold mt-1 uppercase tracking-wider">Payment Received Successfully</p>
-                    <p className="text-slate-400 text-xs mt-3 max-w-md mx-auto leading-relaxed">
-                      Thank you for your order! We've sent a detailed summary confirmation email to <strong className="text-slate-200">{user?.email}</strong> via SendGrid. Your package is currently being processed.
+                    <h2 className="text-2xl font-serif font-bold text-neutral-900 tracking-wide uppercase">Order Confirmed!</h2>
+                    <p className="text-emerald-600 text-xs font-bold mt-1.5 uppercase tracking-wider font-sans">Payment Received Successfully</p>
+                    <p className="text-neutral-500 text-xs mt-3 max-w-md mx-auto leading-relaxed font-sans">
+                      Thank you for your order! We've sent a detailed summary confirmation email to <strong className="text-neutral-800">{user?.email}</strong>. Your package is currently being processed.
                     </p>
                   </div>
 
                   {placedOrder && (
-                    <div className="bg-slate-950/60 border border-slate-850 p-4 max-w-sm mx-auto rounded-xl text-left text-xs space-y-2">
+                    <div className="bg-white border border-neutral-200 p-4 max-w-sm mx-auto rounded-xl text-left text-xs space-y-2 font-sans">
                       <div className="flex justify-between">
-                        <span className="text-slate-500 font-semibold">Order Reference:</span>
-                        <span className="text-slate-300 font-mono">#{placedOrder.id}</span>
+                        <span className="text-neutral-400 font-semibold">Order Reference:</span>
+                        <span className="text-neutral-700 font-mono">#{placedOrder.id}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-500 font-semibold">Total Paid:</span>
-                        <span className="text-indigo-400 font-bold">${parseFloat(placedOrder.total).toFixed(2)}</span>
+                        <span className="text-neutral-400 font-semibold">Total Paid:</span>
+                        <span className="text-neutral-800 font-bold">{formatLKR(placedOrder.total)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-500 font-semibold">Delivery Status:</span>
-                        <span className="text-yellow-500 font-bold uppercase tracking-wider text-[10px]">Processing</span>
+                        <span className="text-neutral-400 font-semibold">Delivery Status:</span>
+                        <span className="text-[#f0a500] font-bold uppercase tracking-wider text-[9px]">Processing</span>
                       </div>
                     </div>
                   )}
 
-                  <div className="pt-6 border-t border-slate-850 flex flex-col sm:flex-row gap-3">
+                  <div className="pt-6 border-t border-neutral-200 flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={() => navigate('/profile')}
-                      className="flex-1 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-350 font-bold py-3 rounded-xl text-xs transition-colors cursor-pointer"
+                      className="flex-1 bg-white hover:bg-neutral-50 border border-neutral-300 text-neutral-600 font-bold py-3 rounded-xl text-xs transition-colors cursor-pointer"
                     >
                       View Order History
                     </button>
                     <button
                       onClick={() => navigate('/products')}
-                      className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl text-xs transition-colors cursor-pointer"
+                      className="flex-1 bg-black hover:bg-neutral-800 text-white font-bold py-3 rounded-xl text-xs transition-colors cursor-pointer"
                     >
                       Continue Shopping
                     </button>
@@ -1129,9 +1116,9 @@ const Checkout: React.FC = () => {
           {/* Sidebar: Order Summary panel (Only shown for steps 1, 2, 3) */}
           {step <= 3 && (
             <div className="space-y-4 text-left">
-              <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-850 p-6 rounded-2xl shadow-xl space-y-6">
-                <h3 className="text-sm font-bold text-slate-100 uppercase tracking-widest flex items-center gap-2 pb-4 border-b border-slate-850">
-                  <ShoppingBag size={16} className="text-indigo-400" /> Order Summary
+              <div className="bg-neutral-50 border border-neutral-200 p-6 rounded-2xl shadow-sm space-y-6 text-neutral-800">
+                <h3 className="text-xs font-bold text-neutral-800 uppercase tracking-widest flex items-center gap-2 pb-4 border-b border-neutral-200 font-sans">
+                  <ShoppingBag size={16} className="text-neutral-500" /> Order Summary
                 </h3>
 
                 {/* Cart items summary */}
@@ -1143,14 +1130,14 @@ const Checkout: React.FC = () => {
                     
                     return (
                       <div key={`${item.productId}-${idx}`} className="flex justify-between items-start text-xs gap-3">
-                        <div className="flex-1">
-                          <p className="font-bold text-slate-200 line-clamp-1">{item.Product.name}</p>
-                          <p className="text-slate-500 text-[10px] mt-0.5">
+                        <div className="flex-1 text-left">
+                          <p className="font-bold text-neutral-700 line-clamp-1">{item.Product.name}</p>
+                          <p className="text-neutral-450 text-[10px] mt-0.5">
                             Qty {item.quantity} {item.variant?.size ? `• Size ${item.variant.size}` : ''}
                           </p>
                         </div>
-                        <span className="font-bold text-slate-350 shrink-0">
-                          ${(price * item.quantity).toFixed(2)}
+                        <span className="font-bold text-neutral-700 shrink-0">
+                          {formatLKR(price * item.quantity)}
                         </span>
                       </div>
                     );
@@ -1158,33 +1145,33 @@ const Checkout: React.FC = () => {
                 </div>
 
                 {/* Totals calculations */}
-                <div className="border-t border-slate-850 pt-4 space-y-2.5 text-xs text-slate-400">
+                <div className="border-t border-neutral-200 pt-4 space-y-2.5 text-xs text-neutral-500 font-sans">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span className="font-bold text-slate-300">${subtotal.toFixed(2)}</span>
+                    <span className="font-bold text-neutral-700">{formatLKR(subtotal)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
-                    <span className="font-bold text-slate-300">
-                      {shippingCost === 0 ? 'FREE' : `$${shippingCost.toFixed(2)}`}
+                    <span className="font-bold text-neutral-750">
+                      {shippingCost === 0 ? 'FREE' : formatLKR(shippingCost)}
                     </span>
                   </div>
                   
-                  <div className="border-t border-slate-850 pt-3 flex justify-between text-sm">
-                    <span className="font-bold text-slate-200">Total</span>
-                    <span className="font-extrabold text-indigo-400 text-base">
-                      ${placedOrder ? parseFloat(placedOrder.total).toFixed(2) : totalCost.toFixed(2)}
+                  <div className="border-t border-neutral-200 pt-3 flex justify-between text-sm">
+                    <span className="font-bold text-neutral-700">Total</span>
+                    <span className="font-extrabold text-neutral-900 text-sm">
+                      {placedOrder ? formatLKR(placedOrder.total) : formatLKR(totalCost)}
                     </span>
                   </div>
                 </div>
               </div>
 
               {/* Guarantees card */}
-              <div className="p-4 rounded-xl border border-slate-850/60 bg-slate-900/20 text-[10px] text-slate-500 leading-relaxed space-y-2">
-                <div className="flex items-center gap-1.5 font-bold text-slate-400 uppercase tracking-widest text-[9px]">
-                  <ShieldCheck size={12} className="text-indigo-400" /> Buyer Guarantees
+              <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50 text-[10px] text-neutral-500 leading-relaxed space-y-2 text-left">
+                <div className="flex items-center gap-1.5 font-bold text-neutral-600 uppercase tracking-widest text-[9px] font-sans">
+                  <ShieldCheck size={12} className="text-[#f0a500]" /> Buyer Guarantees
                 </div>
-                <p>
+                <p className="font-sans leading-normal text-neutral-450">
                   Free shipping on orders over $150. Tracked shipping, easy 14-day returns policy. Standard delivery arrives in 3-5 business days.
                 </p>
               </div>
