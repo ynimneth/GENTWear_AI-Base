@@ -257,7 +257,6 @@ const ProductList: React.FC = () => {
           {currentSlide === 0 ? (
             <div className="w-full h-full flex flex-col md:flex-row animate-fade-in">
               <div className="w-full md:w-[40%] bg-[#f4efe8] flex flex-col justify-center p-8 md:p-12 text-left h-full">
-                <span className="font-serif tracking-[0.3em] text-neutral-500 text-xs uppercase">O D E L</span>
                 <h2 className="font-serif text-3xl md:text-5xl font-light tracking-wide text-neutral-900 mt-5 leading-tight">
                   THE PARADISE <br/>
                   <span className="italic font-normal font-playfair">edit</span>

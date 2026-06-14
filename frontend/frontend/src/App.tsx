@@ -583,7 +583,6 @@ const Footer = () => {
           <h4 className="text-xs uppercase font-extrabold tracking-widest text-white">Get To Know Us</h4>
           <ul className="space-y-2 text-xs text-neutral-400">
             <li className="hover:text-white cursor-pointer transition-colors">Investor Information</li>
-            <li className="hover:text-white cursor-pointer transition-colors">Odel Magazine</li>
           </ul>
           {/* Social Icons */}
           <div className="flex gap-3 pt-2">
